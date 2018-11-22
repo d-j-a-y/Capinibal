@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""Main file for Capinibal the another anticapitalist images generator."""
 
 from wand.image import Image
 from wand.drawing import Drawing
@@ -42,6 +43,19 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
     metrics = draw.get_font_metrics( dummy_image, text_to_mesure )
 
     return metrics
+
+# toss : give kind of rand rythm
+def cpb_text_color_gen (ctx, toss) :
+    toss = int(toss)
+    if (toss < 1) : toss = 1
+    if (random.randrange(1, toss) == 1) :
+        # ~ color FFFFFF -> 16777215
+        color = random.randrange(0, 16777215, 15)
+        red = color >>16
+        green = ( color >> 8 ) & 0xFF
+        blue = color & 0xFF
+        # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
+        ctx.fill_color = Color('rgb({0},{1},{2})'.format(red,green,blue))
 
 #############
 #
@@ -123,14 +137,14 @@ def cpb_img_gen_solo_any_size_center (cpb_texte, ctx) :
 def cpb_capinibal ( pipe ):
     with Drawing() as ctx :
         ctx.font = '/home/carotte/Sources/OF/examples/sound/soundPlayerExample/bin/data/Sudbury_Basin_3D.ttf'
-        ctx.font_size = 170
+        ctx.font_size = 110
         ctx.fill_color = Color('black')
 
-        while True:
+        while False:
+            cpb_text_color_gen (ctx)
             cpb_textes = cpb_text_gen_solo()
             blob = cpb_img_gen_solo_any_size_center(cpb_textes, ctx).make_blob('RGB')
             pipe.stdin.write ( blob )
-        return
 
         in_loop = 0 # number of matrix image
         in_blink = 5 # number of matrix(s) loop
@@ -138,6 +152,7 @@ def cpb_capinibal ( pipe ):
         matrix_align = False
         try:
             while True:
+                cpb_text_color_gen (ctx, 3)
                 if (in_matrix == False):
                     cpb_textes = cpb_text_gen_solo()
                     blob = cpb_img_gen_solo(cpb_textes, ctx).make_blob('RGB')
@@ -165,7 +180,7 @@ def cpb_capinibal ( pipe ):
 # main
 if __name__=="__main__":
 
-    parser = argparse.ArgumentParser(description='Generate capinibal moving images to a named pipe.')
+    parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
     parser.add_argument('-r', '--record', action='store_true',
                        help='Record has video file')
 #    parser.add_argument('-p', '--pipe', action='store_true',
