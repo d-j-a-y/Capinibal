@@ -1,11 +1,11 @@
 # Capinibal
-#### another anticapitalist images generator
+#### « another anticapitalist images generator »
 
 # Author
 Jérôme Blanchi aka d.j.a.y
 
 
-#Usage
+# Usage
 ```
 usage: capinibal.py [-h] [-r] [-v]
 
@@ -22,4 +22,6 @@ for information about copyright and usage terms.
 
 # Dependencies
 * Wand, ctypes-based simple ImageMagick binding for Python.
-`pip install Wand`
+```
+pip3 install Wand
+```
