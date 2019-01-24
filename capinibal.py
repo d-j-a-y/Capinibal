@@ -11,6 +11,35 @@ import time
 import os, tempfile
 import argparse
 
+################### FABRIQUE
+# ~ class CasNormal :
+    # ~ def uneMethode(self) :
+        # ~ print("normal")
+
+# ~ class CasSpecial :
+    # ~ def uneMethode(self) :
+        # ~ print("special")
+
+
+# ~ def casQuiConvient(estNormal=True) :
+    # ~ """Fonction fabrique renvoyant une classe."""
+    # ~ if estNormal :
+        # ~ return CasNormal()
+    # ~ else :
+        # ~ return CasSpecial()
+
+
+# ~ def cpb_generator (gen_type):
+    # ~ if (gen_type == "color") :
+        # ~ return cpb_gen_color ()
+    # ~ else if (gen_type == "size") :
+        # ~ return cpb_gen_color ()
+
+
+# ~ class cpb_gen_color :
+    # ~ def __init__ (self) :
+
+
 #cpb_pattern = "CA{}I{}AL"
 #cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
 
@@ -45,10 +74,8 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
     return metrics
 
 # toss : give kind of rand rythm
-def cpb_text_color_gen (ctx, toss) :
-    toss = int(toss)
-    if (toss < 1) : toss = 1
-    if (random.randrange(1, toss) == 1) :
+def cpb_text_color_gen (ctx, coin = 1) :
+    if (cpb_toss (coin)) :
         # ~ color FFFFFF -> 16777215
         color = random.randrange(0, 16777215, 15)
         red = color >>16
@@ -57,12 +84,19 @@ def cpb_text_color_gen (ctx, toss) :
         # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
         ctx.fill_color = Color('rgb({0},{1},{2})'.format(red,green,blue))
 
+def cpb_toss (coin) :
+    coin = int(coin)
+    if (coin <= 1) : return True
+    if (random.randrange(1, coin) == 1) :
+        return True
+    return False
+
 #############
 #
 # Image generation routines
 #
 ############################
-def cpb_img_gen_matrix (cpb_textes, ctx, align_center):
+def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightblue')) as img:
         half_width = 512;
@@ -108,7 +142,7 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
             clone_ctx(img)
             pipe.stdin.write(img.make_blob('RGB'))
 
-def cpb_img_gen_solo (cpb_texte, ctx):
+def cpb_img_gen_solo_centered (cpb_texte, ctx):
     metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightgreen')) as img:
@@ -121,11 +155,13 @@ def cpb_img_gen_solo (cpb_texte, ctx):
         return img.clone()
         # ~ display(img)
 
-def cpb_img_gen_solo_any_size_center (cpb_texte, ctx) :
+def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
     old_size = ctx.font_size
-    ctx.font_size = int (random.randrange(55, 200, 15))
-    print ("font size " , ctx.font_size)
-    img = cpb_img_gen_solo(cpb_texte, ctx)
+    if (cpb_toss (coin)) :
+        ctx.font_size = int (random.randrange(55, 200, 15))
+        print ("font size " , ctx.font_size)
+
+    img = cpb_img_gen_solo_centered(cpb_texte, ctx)
     ctx.font_size = old_size
     return img
 
@@ -136,15 +172,17 @@ def cpb_img_gen_solo_any_size_center (cpb_texte, ctx) :
 #########################################
 def cpb_capinibal ( pipe ):
     with Drawing() as ctx :
-        ctx.font = '/home/carotte/Sources/OF/examples/sound/soundPlayerExample/bin/data/Sudbury_Basin_3D.ttf'
+        ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
         ctx.font_size = 110
         ctx.fill_color = Color('black')
 
         while False:
-            cpb_text_color_gen (ctx)
+            cpb_text_color_gen (ctx, 3)
             cpb_textes = cpb_text_gen_solo()
-            blob = cpb_img_gen_solo_any_size_center(cpb_textes, ctx).make_blob('RGB')
+            blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
             pipe.stdin.write ( blob )
+
+#        return
 
         in_loop = 0 # number of matrix image
         in_blink = 5 # number of matrix(s) loop
@@ -155,7 +193,7 @@ def cpb_capinibal ( pipe ):
                 cpb_text_color_gen (ctx, 3)
                 if (in_matrix == False):
                     cpb_textes = cpb_text_gen_solo()
-                    blob = cpb_img_gen_solo(cpb_textes, ctx).make_blob('RGB')
+                    blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
                 else:
                     cpb_textes = cpb_text_gen_full()
                     blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
@@ -206,7 +244,7 @@ if __name__=="__main__":
                     '-an', # Tells FFMPEG not to expect any audio
                     '-c:v', 'mjpeg',
                     '-q', '1',
-                    'my_output_videofile.mp4' ]
+                    'capinibal.mp4' ] # Unique name
 #    else if (args['image'] == True):
     else:
         tmpdir = tempfile.mkdtemp()
@@ -227,7 +265,7 @@ if __name__=="__main__":
                     '-c:v','rawvideo',
                     '-s', '1024x576', # size of one frame
                     '-pix_fmt', 'rgb24',
-                    '-r', '8', # frames per second
+                    '-r', '4', # frames per second
                     '-i', '-', # The imput comes from a pipe
                     '-an', # Tells FFMPEG not to expect any audio
                     '-pix_fmt', 'yuv420p',

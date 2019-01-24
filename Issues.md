@@ -4,6 +4,30 @@
   pl = Drawing()
   print(len(pl.TEXT_DECORATION_TYPES)) //random over deco
 
+* debug mode over all functions
+
+* Class pour la generation de text :
+option sur les parametres : taille / style / uniforme_taille / uniforme_style / color ...
+
+* Class pour la generation des tiles (img_gen) ?
+x, y , align, ...
+
+* Class pour les evolutions , avec un tirage au sort pour contredire'
+- changement de couleur/taille progressif ~interpolation ...
+
+* Take a look to python-img-generator loop
+
+* Generator data sources
+Five giants: pauvreté, insalubrité, maladie, ignorance, chomage.  William Beveridge
+Want (misère), Disease, Ignorance, Squalor (condition misérable) and Idleness
+** positive
+*** creative commons
+- wikipedia volume & freq modification - appli qui fait les bulles
+- public services / public invest
+- temporary automomous zone
+** negative
+- stock market pluvalue (no downvalue counterside : market crash could not be totaly considered has 'goodnews')
+- cumul des emissions carbonne "cait climate data explorer 2015" / http://cait.wri.org
 
 # Issues
 * Pipe not close on ctrl-c
