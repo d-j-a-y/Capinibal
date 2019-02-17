@@ -5,9 +5,7 @@ from wand.image import Image
 from wand.drawing import Drawing
 from wand.color import Color
 
-# from sys import sys.stderr
 import sys
-
 import random
 import subprocess
 import time
@@ -103,7 +101,7 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightblue')) as img:
         half_width = 512;
-#        print(img)
+        print(img)
         textes_len = int(len (cpb_textes) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             for i in range (0, textes_len) :
@@ -112,7 +110,7 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
                     clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
                     clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
                 else :
-                    clone_ctx.text(25, (1+i)*int(metrics.ascender), cpb_textes[i]) # 5
+                    clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
                     clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
                 clone_ctx(img)
 
@@ -132,7 +130,7 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
         quarter_width = 256
         deci_height = 57
         for i in range (0, coord_len) :
-#            print(img)
+            print(img)
             coord_index = random.randrange(0, len(candidate_coord))
             coord = candidate_coord[coord_index]
             candidate_coord.pop(coord_index)
@@ -150,7 +148,7 @@ def cpb_img_gen_solo_centered (cpb_texte, ctx):
     metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightgreen')) as img:
-#        print(img)
+        print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             clone_ctx.text(int((img.width - metrics.text_width )/2), int((img.height+metrics.ascender)/2), cpb_texte)
@@ -163,8 +161,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
     old_size = ctx.font_size
     if (cpb_toss (coin)) :
         ctx.font_size = int (random.randrange(55, 200, 15))
-        # if (args['debug']):
-        # print ("font size " , ctx.font_size)
+        print ("font size " , ctx.font_size)
 
     img = cpb_img_gen_solo_centered(cpb_texte, ctx)
     ctx.font_size = old_size
@@ -181,11 +178,11 @@ def cpb_capinibal ( pipe, frames ):
         ctx.font_size = 110
         ctx.fill_color = Color('black')
 
-#        while False:
-#            cpb_text_color_gen (ctx, 3)
-#            cpb_textes = cpb_text_gen_solo()
-#            blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
-#            pipe.stdin.write ( blob )
+        while False:
+            cpb_text_color_gen (ctx, 3)
+            cpb_textes = cpb_text_gen_solo()
+            blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
+            pipe.stdin.write ( blob )
 
 #        return
 
@@ -217,13 +214,13 @@ def cpb_capinibal ( pipe, frames ):
                         in_loop = 0
                     else:
                         if (in_blink < - 20):
-                            # matrix_align = True if (matrix_align == False) else False
+                            matrix_align = True if (matrix_align == False) else False
                             in_blink = 5
             print("All frames generated")
 #        except KeyboardInterrupt: # Use this instead of signal.SIGINT
 #        except SystemExit as e:
         except BrokenPipeError:
-            print("Exception caught, exiting!")
+            print("Pipe broken, exiting!")
         return
 
 
