@@ -33,7 +33,7 @@ See the file [Issue.md](Issues.md) for known problem and task list and [LICENSE.
 for information about copyright and usage terms.
 
 # Dependencies
-* Wand, ctypes-based simple ImageMagick binding for Python.
+* [Wand](http://wand-py.org/), ctypes-based simple ImageMagick binding for Python.
 ```
 pip3 install Wand
 ```
