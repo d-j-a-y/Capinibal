@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 """Main file for Capinibal another anticapitalist images generator."""
 
+#~ import wand
 from wand.image import Image
 from wand.drawing import Drawing
 from wand.color import Color
+
 
 import sys
 import random
@@ -172,7 +174,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 # MainLoop (will be slot machine) and Main
 #
 #########################################
-def cpb_capinibal ( pipe, frames ):
+def cpb_capinibal ( pipe, frames, phase_inc):
     with Drawing() as ctx :
         ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
         ctx.font_size = 110
@@ -191,33 +193,42 @@ def cpb_capinibal ( pipe, frames ):
         in_blink = 5 # number of matrix(s) loop
         in_matrix = False
         matrix_align = False
+        phase = 0
+        blob = None
+        first_time = True
         try:
             # Loop over frames
             while (frames>=0):
                 frames -= step
-                print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align )
-                cpb_text_color_gen (ctx, 1) # 3
-                if (in_matrix == False):
-                    cpb_textes = cpb_text_gen_solo()
-                    blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
-                else:
-                    cpb_textes = cpb_text_gen_full()
-                    blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+                phase += phase_inc
+                print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+                if (phase >= 1000) or (first_time):
+                    first_time = False
+                    phase=phase%1000
+                    cpb_text_color_gen (ctx, 3)
+                    if (in_matrix == False):
+                        cpb_textes = cpb_text_gen_solo()
+                        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+                    else:
+                        cpb_textes = cpb_text_gen_full()
+                        blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+
+                    in_loop += 1
+                    if (in_loop > 24): # 1 s @ 24 fps
+                        in_matrix = True if (in_matrix == False) else False
+                        in_blink = in_blink - 1
+                        if (in_blink > 0):
+                            in_loop = 0
+                        else:
+                            if (in_blink < - 20):
+                                matrix_align = True if (matrix_align == False) else False
+                                in_blink = 5
 
                 pipe.stdin.write( blob )
 
-                in_loop += 1
-                if (in_loop > 24): # 1 s @ 24 fps
-                    in_matrix = True if (in_matrix == False) else False
-                    in_blink = in_blink - 1
-                    if (in_blink > 0):
-                        in_loop = 0
-                    else:
-                        if (in_blink < - 20):
-                            matrix_align = True if (matrix_align == False) else False
-                            in_blink = 5
             print("All frames generated")
-#        except KeyboardInterrupt: # Use this instead of signal.SIGINT
+        except KeyboardInterrupt: # Use this instead of signal.SIGINT
+            print("Interrupted, exiting!")
 #        except SystemExit as e:
         except BrokenPipeError:
             print("Pipe broken, exiting!")
@@ -234,6 +245,8 @@ if __name__=="__main__":
                        help='Frames per second')
     parser.add_argument('-d', '--duration', dest='duration', default='0',
                        help='Seconds, 0 for infinite')
+    parser.add_argument('-s', '--speed', dest='phase_inc', default='200',
+                       help='Seconds, 0 for infinite')
     parser.add_argument('-p', '--pipe', dest='pipename',
                        help='Name of the pipe to stream to, if missing, name is generated')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -247,7 +260,14 @@ if __name__=="__main__":
     duration=args['duration']
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
-    print('Generating ', frames, ' frames for ', duration, ' seconds at ', fps, ' fps.')
+    phase_inc=int(args['phase_inc'])
+    if (phase_inc <1):
+        phase_inc=1
+    if (phase_inc > 1000):
+        phase_inc=1000
+    encoder='avconv'
+    
+    print('Generating ', frames, ' frames for ', duration, ' seconds at ', fps, ' fps, change every ', 1000/phase_inc, 'frame.')
 
     if (outputfile is None):
         # No output file, use a pipe
@@ -264,9 +284,14 @@ if __name__=="__main__":
             print ("Failed to create FIFO: %s" % e, file=sys.stderr)
             quit()
 
-        fifo = open(filename, 'w')
+        try:
+            fifo = open(filename, 'w')
+        except KeyboardInterrupt: # Use this instead of signal.SIGINT
+            print("Interrupted, exiting!")
+            sys.exit()
 
-        cmdstring = ['ffmpeg',
+
+        cmdstring = [encoder,
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
@@ -285,7 +310,7 @@ if __name__=="__main__":
         if (frames<1):
             print("Non-zero duration required when using -o, aborting.", file=sys.stderr)
             sys.exit()
-        cmdstring = ['ffmpeg',
+        cmdstring = [encoder,
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
@@ -305,7 +330,7 @@ if __name__=="__main__":
 
     # Here we loop
 
-    cpb_capinibal (pipe, frames)
+    cpb_capinibal (pipe, frames, phase_inc)
 
     if (args['outputfile'] is None):
         print("Cleaning pipe stuff...", file=sys.stderr)
