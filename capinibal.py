@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """Main file for Capinibal another anticapitalist images generator."""
 
-#~ import wand
 from wand.image import Image
 from wand.drawing import Drawing
 from wand.color import Color
@@ -238,6 +237,17 @@ def cpb_capinibal ( pipe, frames, phase_inc):
 # main
 if __name__=="__main__":
 
+    encoder = None
+    status, result = subprocess.getstatusoutput("avconv")
+    if (status == 1):
+        encoder='avconv'
+    status, result = subprocess.getstatusoutput("ffmpeg")
+    if (status == 1):
+        encoder='ffmpeg'
+    if (encoder is None):
+        print("Missing dependency : You need to install ffmpeg or avconv.")
+        exit ()
+
     parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
     parser.add_argument('-o', '--output', dest='outputfile',
                        help='Output file')
@@ -246,7 +256,7 @@ if __name__=="__main__":
     parser.add_argument('-d', '--duration', dest='duration', default='0',
                        help='Seconds, 0 for infinite')
     parser.add_argument('-s', '--speed', dest='phase_inc', default='200',
-                       help='Seconds, 0 for infinite')
+                       help='Speed, 1 to 1000 (change every frame)')
     parser.add_argument('-p', '--pipe', dest='pipename',
                        help='Name of the pipe to stream to, if missing, name is generated')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -265,9 +275,8 @@ if __name__=="__main__":
         phase_inc=1
     if (phase_inc > 1000):
         phase_inc=1000
-    encoder='avconv'
-    
-    print('Generating ', frames, ' frames for ', duration, ' seconds at ', fps, ' fps, change every ', 1000/phase_inc, 'frame.')
+
+    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/phase_inc, 'frame, with', encoder, 'as encoder.')
 
     if (outputfile is None):
         # No output file, use a pipe
