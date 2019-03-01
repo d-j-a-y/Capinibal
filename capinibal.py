@@ -51,6 +51,9 @@ import argparse
 #
 ############################
 
+verbose = False
+speed = 200
+
 def cpb_text_gen_solo ():
     candidate_letter = ['P', 'B', 'T', 'N']
     txt = "CA"
@@ -173,7 +176,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 # MainLoop (will be slot machine) and Main
 #
 #########################################
-def cpb_capinibal ( pipe, frames, phase_inc):
+def cpb_capinibal ( pipe, frames):
     with Drawing() as ctx :
         ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
         ctx.font_size = 110
@@ -199,9 +202,10 @@ def cpb_capinibal ( pipe, frames, phase_inc):
             # Loop over frames
             while (frames>=0):
                 frames -= step
-                phase += phase_inc
+                phase += speed
                 print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
                 if (phase >= 1000) or (first_time):
+                    print("new image")
                     first_time = False
                     phase=phase%1000
                     cpb_text_color_gen (ctx, 3)
@@ -255,8 +259,8 @@ if __name__=="__main__":
                        help='Frames per second')
     parser.add_argument('-d', '--duration', dest='duration', default='0',
                        help='Seconds, 0 for infinite')
-    parser.add_argument('-s', '--speed', dest='phase_inc', default='200',
-                       help='Speed, 1 to 1000 (change every frame)')
+    parser.add_argument('-s', '--speed', dest='speed_of_change', default='1000',
+                       help='Speed of change (changes per second * 1000)')
     parser.add_argument('-p', '--pipe', dest='pipename',
                        help='Name of the pipe to stream to, if missing, name is generated')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -267,16 +271,17 @@ if __name__=="__main__":
     random.seed()
 
     fps=args['fps']
+    verbose=args['verbose']
     duration=args['duration']
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
-    phase_inc=int(args['phase_inc'])
-    if (phase_inc <1):
-        phase_inc=1
-    if (phase_inc > 1000):
-        phase_inc=1000
-
-    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/phase_inc, 'frame, with', encoder, 'as encoder.')
+    speed=int(1000.0*float(args['speed_of_change'])/float(fps))
+    if (speed <1):
+        speed=1
+    if (speed > 1000):
+        speed=1000
+    print("speed:", float(args['speed_of_change']), ' becomes ', speed)
+    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
 
     if (outputfile is None):
         # No output file, use a pipe
@@ -339,7 +344,7 @@ if __name__=="__main__":
 
     # Here we loop
 
-    cpb_capinibal (pipe, frames, phase_inc)
+    cpb_capinibal (pipe, frames)
 
     if (args['outputfile'] is None):
         print("Cleaning pipe stuff...", file=sys.stderr)
