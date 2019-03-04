@@ -13,6 +13,9 @@ import time
 import os, tempfile
 import argparse
 
+# liblo - see http://das.nasophon.de/pyliblo/examples.html
+import liblo
+
 ################### FABRIQUE
 # ~ class CasNormal :
     # ~ def uneMethode(self) :
@@ -53,6 +56,25 @@ import argparse
 
 verbose = False
 speed = 200
+port = 1234
+fps = 24
+
+
+class CpbServer(liblo.ServerThread):
+    def __init__(self):
+        liblo.ServerThread.__init__(self, port)
+
+    @liblo.make_method('/cpb/speed', 'f')
+    def speed_callback(self, path, args):
+        global speed
+        global verbose
+        if(verbose): print("Old speed:", speed)
+        speed=int(1000.0*float(args[0])/float(fps))
+        if(verbose): print("received OSC message '%s' with argument: %f , speed set to %d" % (path, args[0], speed))
+
+    @liblo.make_method(None, None)
+    def fallback(self, path, args):
+        print("received unknown OSC message '%s'" % path)
 
 def cpb_text_gen_solo ():
     candidate_letter = ['P', 'B', 'T', 'N']
@@ -105,7 +127,7 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightblue')) as img:
         half_width = 512;
-        print(img)
+        if (verbose): print(img)
         textes_len = int(len (cpb_textes) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             for i in range (0, textes_len) :
@@ -152,7 +174,7 @@ def cpb_img_gen_solo_centered (cpb_texte, ctx):
     metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightgreen')) as img:
-        print(img)
+        if (verbose): print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             clone_ctx.text(int((img.width - metrics.text_width )/2), int((img.height+metrics.ascender)/2), cpb_texte)
@@ -165,7 +187,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
     old_size = ctx.font_size
     if (cpb_toss (coin)) :
         ctx.font_size = int (random.randrange(55, 200, 15))
-        print ("font size " , ctx.font_size)
+        if(verbose): print ("font size " , ctx.font_size)
 
     img = cpb_img_gen_solo_centered(cpb_texte, ctx)
     ctx.font_size = old_size
@@ -203,9 +225,10 @@ def cpb_capinibal ( pipe, frames):
             while (frames>=0):
                 frames -= step
                 phase += speed
-                print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+                if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
                 if (phase >= 1000) or (first_time):
-                    print("new image")
+                    print("speed", speed)
+                    if (verbose): print("new image")
                     first_time = False
                     phase=phase%1000
                     cpb_text_color_gen (ctx, 3)
@@ -259,8 +282,8 @@ if __name__=="__main__":
                        help='Frames per second')
     parser.add_argument('-d', '--duration', dest='duration', default='0',
                        help='Seconds, 0 for infinite')
-    parser.add_argument('-s', '--speed', dest='speed_of_change', default='1000',
-                       help='Speed of change (changes per second * 1000)')
+    parser.add_argument('-s', '--speed', dest='speed_of_change', default='4',
+                       help='Speed of change (changes per second)')
     parser.add_argument('-p', '--pipe', dest='pipename',
                        help='Name of the pipe to stream to, if missing, name is generated')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -282,7 +305,12 @@ if __name__=="__main__":
         speed=1000
     print("speed:", float(args['speed_of_change']), ' becomes ', speed)
     print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
-
+    try:
+        server = CpbServer()
+    except (liblo.ServerError):
+        print ("OSC failure!")
+        sys.exit()
+        
     if (outputfile is None):
         # No output file, use a pipe
         if (args['pipename'] is None):
@@ -342,6 +370,8 @@ if __name__=="__main__":
 
     time.sleep(1)
 
+    server.start()
+    
     # Here we loop
 
     cpb_capinibal (pipe, frames)
