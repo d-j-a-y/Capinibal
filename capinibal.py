@@ -70,6 +70,8 @@ class CpbServer(liblo.ServerThread):
         global verbose
         if(verbose): print("Old speed:", speed)
         speed=int(1000.0*float(args[0])/float(fps))
+        if (speed <1): speed=1
+        if (speed > 1000): speed=1000
         if(verbose): print("received OSC message '%s' with argument: %f , speed set to %d" % (path, args[0], speed))
 
     @liblo.make_method(None, None)
@@ -227,7 +229,6 @@ def cpb_capinibal ( pipe, frames):
                 phase += speed
                 if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
                 if (phase >= 1000) or (first_time):
-                    print("speed", speed)
                     if (verbose): print("new image")
                     first_time = False
                     phase=phase%1000
@@ -299,10 +300,8 @@ if __name__=="__main__":
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
     speed=int(1000.0*float(args['speed_of_change'])/float(fps))
-    if (speed <1):
-        speed=1
-    if (speed > 1000):
-        speed=1000
+    if (speed <1): speed=1
+    if (speed > 1000): speed=1000
     print("speed:", float(args['speed_of_change']), ' becomes ', speed)
     print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
     try:
