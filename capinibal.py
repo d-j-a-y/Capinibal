@@ -335,6 +335,7 @@ if __name__=="__main__":
 
 
         cmdstring = [encoder,
+                    '-loglevel', 'warning',
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
