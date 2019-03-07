@@ -59,6 +59,13 @@ speed = 200
 port = 1234
 fps = 24
 
+def set_speed(s) :
+    global speed, verbose
+    speed=int(1000.0*float(s)/float(fps))
+    if (speed <1): speed=1
+    if (speed > 1000): speed=1000
+    if (verbose):
+        print("speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
 
 class CpbServer(liblo.ServerThread):
     def __init__(self):
@@ -66,13 +73,11 @@ class CpbServer(liblo.ServerThread):
 
     @liblo.make_method('/cpb/speed', 'f')
     def speed_callback(self, path, args):
-        global speed
-        global verbose
+        global speed, verbose
+        if(verbose):
+            print("received OSC message '%s' with argument: %f" % (path, args[0]))
         if(verbose): print("Old speed:", speed)
-        speed=int(1000.0*float(args[0])/float(fps))
-        if (speed <1): speed=1
-        if (speed > 1000): speed=1000
-        if(verbose): print("received OSC message '%s' with argument: %f , speed set to %d" % (path, args[0], speed))
+        set_speed(args[0])
 
     @liblo.make_method(None, None)
     def fallback(self, path, args):
@@ -119,7 +124,7 @@ def cpb_toss (coin) :
     if (random.randrange(1, coin) == 1) :
         return True
     return False
-
+    
 #############
 #
 # Image generation routines
@@ -299,10 +304,7 @@ if __name__=="__main__":
     duration=args['duration']
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
-    speed=int(1000.0*float(args['speed_of_change'])/float(fps))
-    if (speed <1): speed=1
-    if (speed > 1000): speed=1000
-    print("speed:", float(args['speed_of_change']), ' becomes ', speed)
+    set_speed(args['speed_of_change'])
     print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
     try:
         server = CpbServer()
@@ -365,7 +367,6 @@ if __name__=="__main__":
                     outputfile ] # Unique name
 
     pipe = subprocess.Popen(cmdstring, stdin=subprocess.PIPE)
-
 
     time.sleep(1)
 
