@@ -59,7 +59,7 @@ speed = 200
 port = 1234
 fps = 24
 
-def set_speed(s) :
+def cpb_setspeed(s) :
     global speed, verbose
     speed=int(1000.0*float(s)/float(fps))
     if (speed <1): speed=1
@@ -77,7 +77,7 @@ class CpbServer(liblo.ServerThread):
         if(verbose):
             print("received OSC message '%s' with argument: %f" % (path, args[0]))
         if(verbose): print("Old speed:", speed)
-        set_speed(args[0])
+        cpb_setspeed(args[0])
 
     @liblo.make_method(None, None)
     def fallback(self, path, args):
@@ -304,7 +304,7 @@ if __name__=="__main__":
     duration=args['duration']
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
-    set_speed(args['speed_of_change'])
+    cpb_setspeed(args['speed_of_change'])
     print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
     try:
         server = CpbServer()
@@ -318,6 +318,7 @@ if __name__=="__main__":
             tmpdir = tempfile.mkdtemp()
             filename = os.path.join(tmpdir, 'myfifo')
         else:
+            tmpdir = None
             filename=args['pipename']
         print ("The fifo is on :\n%s" % filename, file=sys.stderr)
 
@@ -381,7 +382,7 @@ if __name__=="__main__":
         print("Cleaning pipe stuff...", file=sys.stderr)
         fifo.close()
         os.remove(filename)
-        os.rmdir(tmpdir)
+        if(tmpdir): os.rmdir(tmpdir)
     print("Terminated normally")
 
 
