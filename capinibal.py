@@ -13,6 +13,9 @@ import time
 import os, tempfile
 import argparse
 
+# liblo - see http://das.nasophon.de/pyliblo/examples.html
+import liblo
+
 ################### FABRIQUE
 # ~ class CasNormal :
     # ~ def uneMethode(self) :
@@ -50,6 +53,35 @@ import argparse
 # Utils
 #
 ############################
+
+verbose = False
+speed = 200
+port = 1234
+fps = 24
+
+def cpb_setspeed(s) :
+    global speed, verbose
+    speed=int(1000.0*float(s)/float(fps))
+    if (speed <1): speed=1
+    if (speed > 1000): speed=1000
+    if (verbose):
+        print("speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
+
+class CpbServer(liblo.ServerThread):
+    def __init__(self):
+        liblo.ServerThread.__init__(self, port)
+
+    @liblo.make_method('/cpb/speed', 'f')
+    def speed_callback(self, path, args):
+        global speed, verbose
+        if(verbose):
+            print("received OSC message '%s' with argument: %f" % (path, args[0]))
+        if(verbose): print("Old speed:", speed)
+        cpb_setspeed(args[0])
+
+    @liblo.make_method(None, None)
+    def fallback(self, path, args):
+        print("received unknown OSC message '%s'" % path)
 
 def cpb_text_gen_solo ():
     candidate_letter = ['P', 'B', 'T', 'N']
@@ -92,7 +124,7 @@ def cpb_toss (coin) :
     if (random.randrange(1, coin) == 1) :
         return True
     return False
-
+    
 #############
 #
 # Image generation routines
@@ -102,7 +134,7 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightblue')) as img:
         half_width = 512;
-        print(img)
+        if (verbose): print(img)
         textes_len = int(len (cpb_textes) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             for i in range (0, textes_len) :
@@ -149,7 +181,7 @@ def cpb_img_gen_solo_centered (cpb_texte, ctx):
     metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
     with Image(width=1024, height=576, background=Color('lightgreen')) as img:
-        print(img)
+        if (verbose): print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             clone_ctx.text(int((img.width - metrics.text_width )/2), int((img.height+metrics.ascender)/2), cpb_texte)
@@ -162,7 +194,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
     old_size = ctx.font_size
     if (cpb_toss (coin)) :
         ctx.font_size = int (random.randrange(55, 200, 15))
-        print ("font size " , ctx.font_size)
+        if(verbose): print ("font size " , ctx.font_size)
 
     img = cpb_img_gen_solo_centered(cpb_texte, ctx)
     ctx.font_size = old_size
@@ -173,7 +205,7 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 # MainLoop (will be slot machine) and Main
 #
 #########################################
-def cpb_capinibal ( pipe, frames, phase_inc):
+def cpb_capinibal ( pipe, frames):
     with Drawing() as ctx :
         ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
         ctx.font_size = 110
@@ -199,9 +231,10 @@ def cpb_capinibal ( pipe, frames, phase_inc):
             # Loop over frames
             while (frames>=0):
                 frames -= step
-                phase += phase_inc
-                print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+                phase += speed
+                if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
                 if (phase >= 1000) or (first_time):
+                    if (verbose): print("new image")
                     first_time = False
                     phase=phase%1000
                     cpb_text_color_gen (ctx, 3)
@@ -255,8 +288,8 @@ if __name__=="__main__":
                        help='Frames per second')
     parser.add_argument('-d', '--duration', dest='duration', default='0',
                        help='Seconds, 0 for infinite')
-    parser.add_argument('-s', '--speed', dest='phase_inc', default='200',
-                       help='Speed, 1 to 1000 (change every frame)')
+    parser.add_argument('-s', '--speed', dest='speed_of_change', default='4',
+                       help='Speed of change (changes per second)')
     parser.add_argument('-p', '--pipe', dest='pipename',
                        help='Name of the pipe to stream to, if missing, name is generated')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -267,23 +300,25 @@ if __name__=="__main__":
     random.seed()
 
     fps=args['fps']
+    verbose=args['verbose']
     duration=args['duration']
     frames = int(float(fps) * float(duration))
     outputfile=args['outputfile']
-    phase_inc=int(args['phase_inc'])
-    if (phase_inc <1):
-        phase_inc=1
-    if (phase_inc > 1000):
-        phase_inc=1000
-
-    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/phase_inc, 'frame, with', encoder, 'as encoder.')
-
+    cpb_setspeed(args['speed_of_change'])
+    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    try:
+        server = CpbServer()
+    except (liblo.ServerError):
+        print ("OSC failure!")
+        sys.exit()
+        
     if (outputfile is None):
         # No output file, use a pipe
         if (args['pipename'] is None):
             tmpdir = tempfile.mkdtemp()
             filename = os.path.join(tmpdir, 'myfifo')
         else:
+            tmpdir = None
             filename=args['pipename']
         print ("The fifo is on :\n%s" % filename, file=sys.stderr)
 
@@ -301,6 +336,7 @@ if __name__=="__main__":
 
 
         cmdstring = [encoder,
+                    '-loglevel', 'warning',
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
@@ -334,18 +370,19 @@ if __name__=="__main__":
 
     pipe = subprocess.Popen(cmdstring, stdin=subprocess.PIPE)
 
-
     time.sleep(1)
 
+    server.start()
+    
     # Here we loop
 
-    cpb_capinibal (pipe, frames, phase_inc)
+    cpb_capinibal (pipe, frames)
 
     if (args['outputfile'] is None):
         print("Cleaning pipe stuff...", file=sys.stderr)
         fifo.close()
         os.remove(filename)
-        os.rmdir(tmpdir)
+        if(tmpdir): os.rmdir(tmpdir)
     print("Terminated normally")
 
 
