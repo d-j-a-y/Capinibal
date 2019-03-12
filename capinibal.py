@@ -66,6 +66,8 @@ verbose = False
 speed = 200
 port = 1234
 fps = 24
+image_width = 1024
+image_height = 576
 
 def cpb_setspeed(s) :
     global speed, verbose
@@ -140,8 +142,8 @@ def cpb_toss (coin) :
 ############################
 def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-    with Image(width=1024, height=576, background=Color('lightblue')) as img:
-        half_width = 512;
+    with Image(width=image_width, height=image_height, background=Color('lightblue')) as img:
+        half_width = image_width / 2;
         if (verbose): print(img)
         textes_len = int(len (cpb_textes) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -167,9 +169,9 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
         candidate_coord.append(i)
 
     clone_ctx = Drawing(drawing=ctx)
-    with Image(width=1024, height=576, background=Color('lightsalmon')) as img:
-        quarter_width = 256
-        deci_height = 57
+    with Image(width=image_width, height=image_height, background=Color('lightsalmon')) as img:
+        quarter_width = image_width / 4
+        deci_height = int(image_height / 10)
         for i in range (0, coord_len) :
             print(img)
             coord_index = random.randrange(0, len(candidate_coord))
@@ -186,9 +188,9 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
             pipe.stdin.write(img.make_blob('RGB'))
 
 def cpb_img_gen_solo_centered (cpb_texte, ctx):
-    metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
+    metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same length, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-    with Image(width=1024, height=576, background=Color('lightgreen')) as img:
+    with Image(width=image_width, height=image_height, background=Color('lightgreen')) as img:
         if (verbose): print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -214,65 +216,70 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 #
 #########################################
 def cpb_capinibal ( pipe, frames):
-    with Drawing() as ctx :
-        ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
-        ctx.font_size = 110
-        ctx.fill_color = Color('black')
-
-        while False:
-            cpb_text_color_gen (ctx, 3)
-            cpb_textes = cpb_text_gen_solo()
-            blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
-            pipe.stdin.write ( blob )
+    ctx1=Drawing()
+    ctx1.font = './Sudbury_Basin_3D.ttf' #FIXME !
+    ctx1.font_size = 110
+    ctx1.fill_color = Color('black')
+    ctx2=Drawing()
+    ctx2.font = './Sudbury_Basin.ttf' #FIXME !
+    ctx2.font_size = 110
+    ctx2.fill_color = Color('black')
+    ctxs=[ctx1, ctx2]
+    while False:
+        cpb_text_color_gen (ctx, 3)
+        cpb_textes = cpb_text_gen_solo()
+        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
+        pipe.stdin.write ( blob )
 
 #        return
 
-        step = 1 if (frames>0) else 0 # 0 => infinite loop
-        in_loop = 0 # number of matrix image
-        in_blink = 5 # number of matrix(s) loop
-        in_matrix = False
-        matrix_align = False
-        phase = 0
-        blob = None
-        first_time = True
-        try:
-            # Loop over frames
-            while (frames>=0):
-                frames -= step
-                phase += speed
-                if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
-                if (phase >= 1000) or (first_time):
-                    if (verbose): print("new image")
-                    first_time = False
-                    phase=phase%1000
-                    cpb_text_color_gen (ctx, 3)
-                    if (in_matrix == False):
-                        cpb_textes = cpb_text_gen_solo()
-                        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+    step = 1 if (frames>0) else 0 # 0 => infinite loop
+    in_loop = 0 # number of matrix image
+    in_blink = 5 # number of matrix(s) loop
+    in_matrix = False
+    matrix_align = False
+    phase = 0
+    blob = None
+    first_time = True
+    try:
+        # Loop over frames
+        while (frames>=0):
+            frames -= step
+            phase += speed
+            if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+            if (phase >= 1000) or (first_time):
+                if (verbose): print("new image")
+                ctx=ctxs[random.randrange(0, len(ctxs))] # FIXME!
+                first_time = False
+                phase=phase%1000
+                cpb_text_color_gen (ctx, 3)
+                if (in_matrix == False):
+                    cpb_textes = cpb_text_gen_solo()
+                    blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+                else:
+                    cpb_textes = cpb_text_gen_full()
+                    blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+
+                in_loop += 1
+                if (in_loop > 24): # 1 s @ 24 fps
+                    in_matrix = True if (in_matrix == False) else False
+                    in_blink = in_blink - 1
+                    if (in_blink > 0):
+                        in_loop = 0
                     else:
-                        cpb_textes = cpb_text_gen_full()
-                        blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+                        if (in_blink < - 20):
+                            matrix_align = True if (matrix_align == False) else False
+                            in_blink = 5
 
-                    in_loop += 1
-                    if (in_loop > 24): # 1 s @ 24 fps
-                        in_matrix = True if (in_matrix == False) else False
-                        in_blink = in_blink - 1
-                        if (in_blink > 0):
-                            in_loop = 0
-                        else:
-                            if (in_blink < - 20):
-                                matrix_align = True if (matrix_align == False) else False
-                                in_blink = 5
+            pipe.stdin.write( blob )
 
-                pipe.stdin.write( blob )
-
-            print("All frames generated")
-        except KeyboardInterrupt: # Use this instead of signal.SIGINT
-            print("Interrupted, exiting!")
+        print("All frames generated")
+    except KeyboardInterrupt: # Use this instead of signal.SIGINT
+        print("Interrupted, exiting!")
 #        except SystemExit as e:
-        except BrokenPipeError:
-            print("Pipe broken, exiting!")
-        return
+    except BrokenPipeError:
+        print("Pipe broken, exiting!")
+    return
 
 
 # main
@@ -362,7 +369,7 @@ if __name__=="__main__":
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', '1024x576', # size of one frame
+                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
                     '-r', fps, # frames per second
                     '-i', '-', # The input comes from a pipe
@@ -381,7 +388,7 @@ if __name__=="__main__":
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', '1024x576', # size of one frame
+                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
                     '-r', fps, # frames per second
                     '-i', '-', # The input comes from a pipe
