@@ -1,5 +1,7 @@
 # TODO list
 
+* how import lib after args parsing (if missing depency lib --help doesn't work)
+
 * random over text decoration
   pl = Drawing()
   print(len(pl.TEXT_DECORATION_TYPES)) //random over deco
@@ -18,8 +20,16 @@ x, y , align, ...
 * Take a look to python-img-generator loop
 
 * Generator data sources
-Five giants: pauvreté, insalubrité, maladie, ignorance, chomage.  William Beveridge
+« cinq grands maux » / Five giants: pauvreté, insalubrité, maladie, ignorance, chomage.  William Beveridge (19e-20e)
 Want (misère), Disease, Ignorance, Squalor (condition misérable) and Idleness
+++++ ~pollution, liberté
+
+voir ;Développement humain / Amartya Sen (20e)
+le développement est désormais considéré par le Pr Sen comme un processus qui
+supprime les principaux facteurs de blocage aux libertés tels la pauvreté, la
+tyrannie, l’absence d’opportunités économiques, les conditions sociales précaires,
+l’intolérance ou la répression autoritaire. 
+
 ** positive
 *** creative commons
 - wikipedia volume & freq modification - appli qui fait les bulles
