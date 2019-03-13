@@ -73,7 +73,7 @@ image_height = 576
 def cpb_setspeed(s) :
     global speed, verbose
     speed=int(1000.0*float(s)/float(fps))
-    if (speed <1): speed=1
+    if (speed < 1): speed=1
     if (speed > 1000): speed=1000
     if (verbose):
         print("Speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
@@ -105,9 +105,9 @@ def cpb_text_gen_solo ():
     txt = txt + "AL"
     return txt
 
-def cpb_text_gen_full ():
+def cpb_text_gen_full (n=10):
     txt_list = []
-    for i in range (0, 10) :
+    for i in range (0, n) :
         txt_list.append (cpb_text_gen_solo())
     return txt_list
 
@@ -163,84 +163,83 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
         return img.clone()
         # ~ display(img)
 
-def cpb_img_gen_matrix_line (cpb_textes, ctx, align_center = False):
-#    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-#    global image
-#    with image.clone() as img:
-    with cpb_img_gen_matrix.image.clone() as img:
-        half_width = int(image_width / 2);
-        if (verbose): print(img)
-        textes_len = int(len (cpb_textes) / 2)
-        with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-            if (cpb_img_gen_matrix.step==0):
-                # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-                # cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
-                clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
-            i=cpb_img_gen_matrix.step # in range (0, textes_len) :
-            metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
-            # FIXME!
-            #~ File "./capinibal.py", line 173, in cpb_img_gen_matrix_step
-            #~ clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-            #~ File "/usr/local/lib/python3.4/dist-packages/wand/drawing.py", line 1788, in text
-            #~ raise exc('x must be a natural number, not ' + repr(x))
-            #~ ValueError: x must be a natural number, not -11.0
-
+def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False):
+    if (verbose): print(img)
+    # FIXME rows and columns should be parameters
+    cols=2
+    rows=5
+    grid_len = rows * cols
+    col_width = image_width // cols
+    row_height = image_height // rows
+    textes_len = len (cpb_textes)
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0):
+            # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
+            # cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+            clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
+        y=cpb_img_gen_matrix.step
+        texte_num = cols * y
+        for x in range (0, cols):
+            metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+            w=int(metrics.text_width)
+            h=int(metrics.ascender)
+            hmargin=1
             if (align_center) :
-                clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-                clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-            else :
-                clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
-                clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-            clone_ctx(img)
-        cpb_img_gen_matrix.step+=1
-        if (cpb_img_gen_matrix.step>=textes_len): cpb_img_gen_matrix.step=0
-        return img.clone()
-        # ~ display(img)
+                hmargin=(col_width-w)//2
+            if (hmargin<0):
+                print('Alignment problem:', cpb_textes[texte_num], 'width:', w)
+                hmargin=0
+            vmargin=(row_height-h)//2
+            if (vmargin<0):
+                print('Alignment problem:', cpb_textes[texte_num], 'height:', h)
+                vmargin=0
+            clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, cpb_textes[texte_num])                
+            texte_num +=1 
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=rows): cpb_img_gen_matrix.step=0
+    #~ return img.clone()
 
-def cpb_img_gen_matrix_grid (cpb_textes, ctx, align_center = False):
-#    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-#    global image
-#    with image.clone() as img:
-    with cpb_img_gen_matrix.image.clone() as img:
-        half_width = int(image_width / 2)
-        if (verbose): print(img)
-        textes_len = len (cpb_textes)
+def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False):
+    #~ with image as img: # Causes the image to be closed!
+    if (verbose): print(img)
+    # FIXME rows and columns should be parameters
+    cols=2
+    rows=5
+    grid_len = rows * cols
+    col_width = image_width // cols
+    row_height = image_height // rows
+    textes_len = len (cpb_textes) # may be different from grid_len
 
-        with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-            if (cpb_img_gen_matrix.step==0):
-                # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-                # cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
-                cpb_img_gen_matrix_grid.textes_num = list(range(0, textes_len))
-                clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
-            # i=cpb_img_gen_matrix.step # in range (0, textes_len) :
-            k = random.randrange(0, len(cpb_img_gen_matrix_grid.textes_num))
-            i = cpb_img_gen_matrix_grid.textes_num[k]
-            cpb_img_gen_matrix_grid.textes_num.pop(k)
-            metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # text size
-            # FIXME!
-            #~ File "./capinibal.py", line 173, in cpb_img_gen_matrix_step
-            #~ clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-            #~ File "/usr/local/lib/python3.4/dist-packages/wand/drawing.py", line 1788, in text
-            #~ raise exc('x must be a natural number, not ' + repr(x))
-            #~ ValueError: x must be a natural number, not -11.0
-
-            if (i & 1):
-                x = half_width - int(metrics.text_width) - 1
-                if (x<0): x=0
-                clone_ctx.text(x , ((i>>1)+1)*int(metrics.ascender), cpb_textes[i])
-            else:
-                clone_ctx.text(half_width + 1, ((i>>1)+1)*int(metrics.ascender), cpb_textes[i])
-            #~ if (align_center) :
-                #~ clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-                #~ clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-            #~ else :
-                #~ clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
-                #~ clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-            clone_ctx(img)
-        cpb_img_gen_matrix.step+=1
-        if (cpb_img_gen_matrix.step>=textes_len): cpb_img_gen_matrix.step=0
-        return img.clone()
-        # ~ display(img)
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0):
+            cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
+            # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
+            clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
+        k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
+        i = cpb_img_gen_matrix_grid.cells_num[k]
+        cpb_img_gen_matrix_grid.cells_num.pop(k)
+        x= i % cols
+        y= i // cols
+        texte_num = i % textes_len # in case there are less texts than cells
+        metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+        w=int(metrics.text_width)
+        h=int(metrics.ascender)
+        hmargin=1
+        if (align_center) :
+            hmargin=(col_width-w)//2
+        if (hmargin<0):
+            print('Alignment problem:', cpb_textes[texte_num], 'width:', w)
+            hmargin=0
+        vmargin=(row_height-h)//2
+        if (vmargin<0):
+            print('Alignment problem:', cpb_textes[texte_num], 'height:', h)
+            vmargin=0
+        clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, cpb_textes[texte_num])
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=grid_len): cpb_img_gen_matrix.step=0
+    #~ return img.clone()
 
 # currently unused
 def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
@@ -300,11 +299,11 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 def cpb_capinibal ( pipe, frames):
     ctx1=Drawing()
     ctx1.font = './Sudbury_Basin_3D.ttf' #FIXME !
-    ctx1.font_size = 110
+    ctx1.font_size = 107
     ctx1.fill_color = Color('black')
     ctx2=Drawing()
     ctx2.font = './Sudbury_Basin.ttf' #FIXME !
-    ctx2.font_size = 110
+    ctx2.font_size = 107
     ctx2.fill_color = Color('black')
     ctxs=[ctx1, ctx2]
     while False:
@@ -324,9 +323,9 @@ def cpb_capinibal ( pipe, frames):
     blob = None
     first_time = True
 
-    # global image
-    # image=Image(width=image_width, height=image_height, background=Color('lightblue'))
-    cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+    global image
+    image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+    #~ cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
     cpb_img_gen_matrix.step=0
     
     try:
@@ -346,9 +345,10 @@ def cpb_capinibal ( pipe, frames):
                     blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
                 else:
                     cpb_textes = cpb_text_gen_full()
-                    #blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
-                    cpb_img_gen_matrix.image=cpb_img_gen_matrix_grid(cpb_textes, ctx, matrix_align)
-                    blob = cpb_img_gen_matrix.image.make_blob('RGB')
+                    #~ blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+                    #~ cpb_img_gen_matrix_grid(cpb_textes, ctx, image, matrix_align)
+                    cpb_img_gen_matrix_line(cpb_textes, ctx, image, matrix_align)
+                    blob = image.make_blob('RGB')
 
                 in_loop += 1
                 if (in_loop > 24): # 1 s @ 24 fps
