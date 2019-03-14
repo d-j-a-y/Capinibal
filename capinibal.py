@@ -119,7 +119,7 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
     return metrics
 
 # toss : give kind of rand rythm
-def cpb_text_color_gen (ctx, coin = 1) :
+def cpb_color_gen (coin = 1) :
     if (cpb_toss (coin)) :
         # ~ color FFFFFF -> 16777215
         color = random.randrange(0, 16777215, 15)
@@ -127,7 +127,11 @@ def cpb_text_color_gen (ctx, coin = 1) :
         green = ( color >> 8 ) & 0xFF
         blue = color & 0xFF
         # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
-        ctx.fill_color = Color('rgb({0},{1},{2})'.format(red,green,blue))
+        return Color('rgb({0},{1},{2})'.format(red,green,blue))
+
+def cpb_text_color_gen (ctx, coin = 1) :
+    if (cpb_toss (coin)) :
+        ctx.fill_color = cpb_color_gen ()
 
 def cpb_toss (coin) :
     coin = int(coin)
@@ -141,15 +145,17 @@ def cpb_toss (coin) :
 # Image generation routines
 #
 ############################
-def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
+def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-#    global image
 #    with image.clone() as img:
-    with cpb_img_gen_matrix.image.clone() as img:
-        half_width = int(image_width / 2)
+        half_width = image_width // 2
         if (verbose): print(img)
-        textes_len = int(len (cpb_textes) / 2)
+        textes_len = len (cpb_textes) // 2
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+            old_color=clone_ctx.fill_color
+            clone_ctx.fill_color=bg_color
+            clone_ctx.color(0, 0, 'reset')          
+            clone_ctx.fill_color=old_color
             for i in range (0, textes_len) :
                 metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
                 if (align_center) :
@@ -160,14 +166,11 @@ def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
                     clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
                 clone_ctx(img)
 
-        return img.clone()
+        #~ return img.clone()
         # ~ display(img)
 
-def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False):
+def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5):
     if (verbose): print(img)
-    # FIXME rows and columns should be parameters
-    cols=2
-    rows=5
     grid_len = rows * cols
     col_width = image_width // cols
     row_height = image_height // rows
@@ -175,11 +178,14 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False):
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
         if (cpb_img_gen_matrix.step==0):
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            # cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
-            clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
+            #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
+            old_color=clone_ctx.fill_color
+            clone_ctx.fill_color=bg_color
+            clone_ctx.color(0, 0, 'reset')          
+            clone_ctx.fill_color=old_color
         y=cpb_img_gen_matrix.step
-        texte_num = cols * y
         for x in range (0, cols):
+            texte_num = (x + cols * y) % textes_len
             metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
             w=int(metrics.text_width)
             h=int(metrics.ascender)
@@ -200,22 +206,24 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False):
     if (cpb_img_gen_matrix.step>=rows): cpb_img_gen_matrix.step=0
     #~ return img.clone()
 
-def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False):
+def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5 ):
     #~ with image as img: # Causes the image to be closed!
     if (verbose): print(img)
-    # FIXME rows and columns should be parameters
-    cols=2
-    rows=5
     grid_len = rows * cols
     col_width = image_width // cols
     row_height = image_height // rows
     textes_len = len (cpb_textes) # may be different from grid_len
 
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        if (cpb_img_gen_matrix.step==0):
+        if (cpb_img_gen_matrix.step==0 or cpb_img_gen_matrix_grid.cells_num==[]): #(cpb_img_gen_matrix.step==0):
             cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
+            cpb_img_gen_matrix.step=0
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            clone_ctx.composite('clear', 0, 0, image_width, image_height, img)
+            #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
+            old_color=clone_ctx.fill_color
+            clone_ctx.fill_color=bg_color
+            clone_ctx.color(0, 0, 'reset')          
+            clone_ctx.fill_color=old_color
         k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
         i = cpb_img_gen_matrix_grid.cells_num[k]
         cpb_img_gen_matrix_grid.cells_num.pop(k)
@@ -306,6 +314,9 @@ def cpb_capinibal ( pipe, frames):
     ctx2.font_size = 107
     ctx2.fill_color = Color('black')
     ctxs=[ctx1, ctx2]
+    cpb_funs=[cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
+    cpb_fun=0
+    
     while False:
         cpb_text_color_gen (ctx, 3)
         cpb_textes = cpb_text_gen_solo()
@@ -323,10 +334,11 @@ def cpb_capinibal ( pipe, frames):
     blob = None
     first_time = True
 
-    global image
+    #~ global image
     image=Image(width=image_width, height=image_height, background=Color('lightblue'))
     #~ cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
     cpb_img_gen_matrix.step=0
+    cpb_img_gen_matrix_grid.cells_num=[]
     
     try:
         # Loop over frames
@@ -345,9 +357,8 @@ def cpb_capinibal ( pipe, frames):
                     blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
                 else:
                     cpb_textes = cpb_text_gen_full()
-                    #~ blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
-                    #~ cpb_img_gen_matrix_grid(cpb_textes, ctx, image, matrix_align)
-                    cpb_img_gen_matrix_line(cpb_textes, ctx, image, matrix_align)
+                    # FIXME image should be cleared when drawing function changes
+                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, cpb_color_gen())
                     blob = image.make_blob('RGB')
 
                 in_loop += 1
@@ -356,6 +367,7 @@ def cpb_capinibal ( pipe, frames):
                     in_blink = in_blink - 1
                     if (in_blink > 0):
                         in_loop = 0
+                        cpb_fun=(cpb_fun+1)%len(cpb_funs)
                     else:
                         if (in_blink < - 20):
                             matrix_align = True if (matrix_align == False) else False
@@ -423,7 +435,10 @@ if __name__=="__main__":
 
     random.seed()
 
-    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    if(duration):
+        print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    else:
+        print('Generating frames at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
 
     try:
         server = CpbServer()
