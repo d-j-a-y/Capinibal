@@ -260,13 +260,13 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img, align_center = False, bg_color = Co
             clone_ctx.fill_color=bg_color
             clone_ctx.color(0, 0, 'reset')          
             clone_ctx.fill_color=old_color
-        ctx.font_size = int (random.randrange(55, 200, 15))
-        metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+        clone_ctx.font_size = int (random.randrange(55, 200, 15))
+        if(verbose): print ("font size " , clone_ctx.font_size)
+        metrics = cpb_get_text_metrics ( cpb_textes[texte_num], clone_ctx ) # text size
         w=int(metrics.text_width)
         h=int(metrics.ascender)
         x=random.randrange(0, image_width-w)
         y=random.randrange(h, image_height)
-        if(verbose): print ("font size " , ctx.font_size)
         clone_ctx.text(x, y, cpb_textes[texte_num])
         clone_ctx(img)
     cpb_img_gen_matrix.step+=1
