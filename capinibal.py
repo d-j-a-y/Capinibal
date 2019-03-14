@@ -119,19 +119,18 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
     return metrics
 
 # toss : give kind of rand rythm
-def cpb_color_gen (coin = 1) :
-    if (cpb_toss (coin)) :
-        # ~ color FFFFFF -> 16777215
-        color = random.randrange(0, 16777215, 15)
-        red = color >>16
-        green = ( color >> 8 ) & 0xFF
-        blue = color & 0xFF
-        # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
-        return Color('rgb({0},{1},{2})'.format(red,green,blue))
+def cpb_random_color () :
+    # ~ color FFFFFF -> 16777215
+    color = random.randrange(0, 16777215, 15)
+    red = color >>16
+    green = ( color >> 8 ) & 0xFF
+    blue = color & 0xFF
+    # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
+    return Color('rgb({0},{1},{2})'.format(red,green,blue))
 
-def cpb_text_color_gen (ctx, coin = 1) :
+def cpb_fill_color_gen (ctx, coin = 1) :
     if (cpb_toss (coin)) :
-        ctx.fill_color = cpb_color_gen ()
+        ctx.fill_color = cpb_random_color ()
 
 def cpb_toss (coin) :
     coin = int(coin)
@@ -249,6 +248,30 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_colo
     if (cpb_img_gen_matrix.step>=grid_len): cpb_img_gen_matrix.step=0
     #~ return img.clone()
 
+def cpb_img_gen_cloud (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
+    #~ with image as img: # Causes the image to be closed!
+    if (verbose): print(img)
+    textes_len = len (cpb_textes)
+    texte_num=random.randrange(0, textes_len)
+    cloud_len=15
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0):
+            old_color=clone_ctx.fill_color
+            clone_ctx.fill_color=bg_color
+            clone_ctx.color(0, 0, 'reset')          
+            clone_ctx.fill_color=old_color
+        ctx.font_size = int (random.randrange(55, 200, 15))
+        metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+        w=int(metrics.text_width)
+        h=int(metrics.ascender)
+        x=random.randrange(0, image_width-w)
+        y=random.randrange(h, image_height)
+        if(verbose): print ("font size " , ctx.font_size)
+        clone_ctx.text(x, y, cpb_textes[texte_num])
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=cloud_len): cpb_img_gen_matrix.step=0
+
 # currently unused
 def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
     textes_len = len (cpb_textes)
@@ -314,11 +337,12 @@ def cpb_capinibal ( pipe, frames):
     ctx2.font_size = 107
     ctx2.fill_color = Color('black')
     ctxs=[ctx1, ctx2]
-    cpb_funs=[cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
+    #~ cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
+    cpb_funs=[cpb_img_gen_cloud]
     cpb_fun=0
     
     while False:
-        cpb_text_color_gen (ctx, 3)
+        cpb_fill_color_gen (ctx, 3)
         cpb_textes = cpb_text_gen_solo()
         blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
         pipe.stdin.write ( blob )
@@ -351,14 +375,14 @@ def cpb_capinibal ( pipe, frames):
                 ctx=ctxs[random.randrange(0, len(ctxs))] # FIXME!
                 first_time = False
                 phase=phase%1000
-                cpb_text_color_gen (ctx, 3)
+                cpb_fill_color_gen (ctx, 3)
                 if (in_matrix == False):
                     cpb_textes = cpb_text_gen_solo()
                     blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
                 else:
                     cpb_textes = cpb_text_gen_full()
                     # FIXME image should be cleared when drawing function changes
-                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, cpb_color_gen())
+                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, cpb_random_color())
                     blob = image.make_blob('RGB')
 
                 in_loop += 1
@@ -368,6 +392,7 @@ def cpb_capinibal ( pipe, frames):
                     if (in_blink > 0):
                         in_loop = 0
                         cpb_fun=(cpb_fun+1)%len(cpb_funs)
+                        cpb_img_gen_matrix.step=0
                     else:
                         if (in_blink < - 20):
                             matrix_align = True if (matrix_align == False) else False
