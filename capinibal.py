@@ -144,36 +144,29 @@ def cpb_toss (coin) :
 # Image generation routines
 #
 ############################
-def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
-#    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-#    with image.clone() as img:
-        half_width = image_width // 2
-        if (verbose): print(img)
-        textes_len = len (cpb_textes) // 2
-        with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-            old_color=clone_ctx.fill_color
-            clone_ctx.fill_color=bg_color
-            clone_ctx.color(0, 0, 'reset')          
-            clone_ctx.fill_color=old_color
-            for i in range (0, textes_len) :
-                metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
-                if (align_center) :
-                    clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-                    clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-                else :
-                    clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
-                    clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-                clone_ctx(img)
-
-        #~ return img.clone()
-        # ~ display(img)
-
 def cpb_set_bg(ctx, bg_color):
     #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
     old_color=ctx.fill_color
     ctx.fill_color=bg_color
     ctx.color(0, 0, 'reset')          
     ctx.fill_color=old_color
+
+def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
+# FIXME hard-coded to 2x5 cells
+    half_width = image_width // 2
+    if (verbose): print(img)
+    textes_len = len (cpb_textes) // 2
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        cpb_set_bg(clone_ctx, bg_color)
+        for i in range (0, textes_len) :
+            metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
+            if (align_center) :
+                clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
+                clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
+            else :
+                clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
+                clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
+            clone_ctx(img)
 
 def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5):
     if (verbose): print(img)
