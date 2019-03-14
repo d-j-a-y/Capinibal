@@ -48,10 +48,48 @@ class Capinibal:
     duration = 0
     frame = 0
     fps = 24
+    image_width = 1024
+    image_height = 576
     speed = 200
     port = 1234
-    outputfile = ""
     verbose = False
+
+
+    # toss : give kind of rand rythm
+    def cpb_random_color () :
+        # ~ color FFFFFF -> 16777215
+        color = random.randrange(0, 16777215, 15)
+        red = color >>16
+        green = ( color >> 8 ) & 0xFF
+        blue = color & 0xFF
+        # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
+        return Color('rgb({0},{1},{2})'.format(red,green,blue))
+
+    def cpb_fill_color_gen (ctx, coin = 1) :
+        if (Capinibal.cpb_toss (coin)) :
+            ctx.fill_color = Capinibal.cpb_random_color ()
+
+    def cpb_set_bg(ctx, bg_color):
+        #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
+        old_color=ctx.fill_color
+        ctx.fill_color=bg_color
+        ctx.color(0, 0, 'reset')
+        ctx.fill_color=old_color
+
+    def cpb_toss (coin) :
+        coin = int(coin)
+        if (coin <= 1) : return True
+        if (random.randrange(1, coin) == 1) :
+            return True
+        return False
+
+    def cpb_setspeed(speed) :
+        Capinibal.speed=int(1000.0*float(speed)/float(Capinibal.fps))
+        if (Capinibal.speed < 1): Capinibal.speed=1
+        if (Capinibal.speed > 1000): Capinibal.speed=1000
+        if (Capinibal.verbose):
+            print("Speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
+
     class Effect_parameters:
         cols=2
         rows=5
@@ -59,6 +97,9 @@ class Capinibal:
         img = None
         align_center = False
         bg_color = Color('lightblue')
+        # ~ def get_param()
+        # ~ def inc_rand_param()
+        # ~ def dec_rand_param()
 
 #cpb_pattern = "CA{}I{}AL"
 #cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
@@ -69,33 +110,16 @@ class Capinibal:
 #
 ############################
 
-verbose = False
-speed = 200
-port = 1234
-fps = 24
-image_width = 1024
-image_height = 576
-# image = None
-
-def cpb_setspeed(s) :
-    global speed, verbose
-    speed=int(1000.0*float(s)/float(fps))
-    if (speed < 1): speed=1
-    if (speed > 1000): speed=1000
-    if (verbose):
-        print("Speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
-
 class CpbServer(liblo.ServerThread):
     def __init__(self):
-        liblo.ServerThread.__init__(self, port)
+        liblo.ServerThread.__init__(self, Capinibal.port)
 
     @liblo.make_method('/cpb/speed', 'f')
     def speed_callback(self, path, args):
-        global speed, verbose
-        if(verbose):
+        if(Capinibal.verbose):
             print("received OSC message '%s' with argument: %f" % (path, args[0]))
-        if(verbose): print("Old speed:", speed)
-        cpb_setspeed(args[0])
+        if(Capinibal.verbose): print("Old speed:", Capinibal.speed)
+        Capinibal.cpb_setspeed(args[0])
 
     @liblo.make_method(None, None)
     def fallback(self, path, args):
@@ -125,46 +149,18 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
 
     return metrics
 
-# toss : give kind of rand rythm
-def cpb_random_color () :
-    # ~ color FFFFFF -> 16777215
-    color = random.randrange(0, 16777215, 15)
-    red = color >>16
-    green = ( color >> 8 ) & 0xFF
-    blue = color & 0xFF
-    # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
-    return Color('rgb({0},{1},{2})'.format(red,green,blue))
-
-def cpb_fill_color_gen (ctx, coin = 1) :
-    if (cpb_toss (coin)) :
-        ctx.fill_color = cpb_random_color ()
-
-def cpb_toss (coin) :
-    coin = int(coin)
-    if (coin <= 1) : return True
-    if (random.randrange(1, coin) == 1) :
-        return True
-    return False
-    
 #############
 #
 # Image generation routines
 #
 ############################
-def cpb_set_bg(ctx, bg_color):
-    #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
-    old_color=ctx.fill_color
-    ctx.fill_color=bg_color
-    ctx.color(0, 0, 'reset')          
-    ctx.fill_color=old_color
-
 def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
 # FIXME hard-coded to 2x5 cells
-    half_width = image_width // 2
-    if (verbose): print(img)
+    half_width = Capinibal.image_width // 2
+    if (Capinibal.verbose): print(img)
     textes_len = len (cpb_textes) // 2
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        cpb_set_bg(clone_ctx, bg_color)
+        Capinibal.cpb_set_bg(clone_ctx, bg_color)
         for i in range (0, textes_len) :
             metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
             if (align_center) :
@@ -176,15 +172,15 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = C
             clone_ctx(img)
 
 def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5):
-    if (verbose): print(img)
+    if (Capinibal.verbose): print(img)
     grid_len = rows * cols
-    col_width = image_width // cols
-    row_height = image_height // rows
+    col_width = Capinibal.image_width // cols
+    row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes)
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
         if (cpb_img_gen_matrix.step==0):
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            cpb_set_bg(clone_ctx, bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, bg_color)
         y=cpb_img_gen_matrix.step
         for x in range (0, cols):
             texte_num = (x + cols * y) % textes_len
@@ -212,10 +208,10 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_colo
     #~ with image as img: # Causes the image to be closed!
     cols=Capinibal.Effect_parameters.cols
     rows=Capinibal.Effect_parameters.rows
-    if (verbose): print(img)
+    if (Capinibal.verbose): print(img)
     grid_len = rows * cols
-    col_width = image_width // cols
-    row_height = image_height // rows
+    col_width = Capinibal.image_width // cols
+    row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes) # may be different from grid_len
 
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -224,7 +220,7 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_colo
             cpb_img_gen_matrix.step=0
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
             #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
-            cpb_set_bg(clone_ctx, bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, bg_color)
         k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
         i = cpb_img_gen_matrix_grid.cells_num[k]
         cpb_img_gen_matrix_grid.cells_num.pop(k)
@@ -252,30 +248,30 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_colo
 
 def cpb_img_gen_cloud (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
     #~ with image as img: # Causes the image to be closed!
-    if (verbose): print(img)
+    if (Capinibal.verbose): print(img)
     #~ textes_len = len (cpb_textes)
     #~ texte_num=random.randrange(0, textes_len)
     text=random.choice(cpb_textes)
     cloud_len=15
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
         if (cpb_img_gen_matrix.step==0):
-            cpb_set_bg(clone_ctx, bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, bg_color)
         clone_ctx.font_size = int (random.randrange(55, 200, 15))
-        if(verbose): print ("font size " , clone_ctx.font_size)
+        if(Capinibal.verbose): print ("font size " , clone_ctx.font_size)
         metrics = cpb_get_text_metrics ( text, clone_ctx ) # text size
         w=int(metrics.text_width)
         h=int(metrics.ascender)
         if (align_center):
-            x=(image_width-w)//2
+            x=(Capinibal.image_width-w)//2
         else:
             #~ x=random.randrange(0, image_width-w)
-            x=int(random.gauss((image_width-w)//2, (image_width-w)//6))
+            x=int(random.gauss((Capinibal.image_width-w)//2, (Capinibal.image_width-w)//6))
             if x<0: x=0
-            if x>image_width-w: x=image_width-w
+            if x>Capinibal.image_width-w: x=Capinibal.image_width-w
         #~ y=random.randrange(h, image_height)
-        y=int(random.gauss((image_height-h)//2, (image_height-h)//6))
+        y=int(random.gauss((Capinibal.image_height-h)//2, (Capinibal.image_height-h)//6))
         if y<0: y=0
-        if y>image_height-h: y=image_height-h
+        if y>Capinibal.image_height-h: y=Capinibal.image_height-h
         y+=h
         clone_ctx.text(x, y, text)
         clone_ctx(img)
@@ -291,9 +287,9 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
         candidate_coord.append(i)
 
     clone_ctx = Drawing(drawing=ctx)
-    with Image(width=image_width, height=image_height, background=Color('lightsalmon')) as img:
-        quarter_width = image_width / 4
-        deci_height = int(image_height / 10)
+    with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightsalmon')) as img:
+        quarter_width = Capinibal.image_width / 4
+        deci_height = int(Capinibal.image_height / 10)
         for i in range (0, coord_len) :
             print(img)
             coord_index = random.randrange(0, len(candidate_coord))
@@ -312,8 +308,8 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
 def cpb_img_gen_solo_centered (cpb_texte, ctx):
     metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same length, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-    with Image(width=image_width, height=image_height, background=Color('lightgreen')) as img:
-        if (verbose): print(img)
+    with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightgreen')) as img:
+        if (Capinibal.verbose): print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
             clone_ctx.text(int((img.width - metrics.text_width )/2), int((img.height+metrics.ascender)/2), cpb_texte)
@@ -324,9 +320,9 @@ def cpb_img_gen_solo_centered (cpb_texte, ctx):
 
 def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
     old_size = ctx.font_size
-    if (cpb_toss (coin)) :
+    if (Capinibal.cpb_toss (coin)) :
         ctx.font_size = int (random.randrange(55, 200, 15))
-        if(verbose): print ("font size " , ctx.font_size)
+        if(Capinibal.verbose): print ("font size " , ctx.font_size)
 
     img = cpb_img_gen_solo_centered(cpb_texte, ctx)
     ctx.font_size = old_size
@@ -352,7 +348,7 @@ def cpb_capinibal ( pipe, frames):
     cpb_fun=0
     
     while False:
-        cpb_fill_color_gen (ctx, 3)
+        Capinibal.cpb_fill_color_gen (ctx, 3)
         cpb_textes = cpb_text_gen_solo()
         blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
         pipe.stdin.write ( blob )
@@ -369,7 +365,7 @@ def cpb_capinibal ( pipe, frames):
     first_time = True
 
     #~ global image
-    image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+    image=Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightblue'))
     #~ cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
     cpb_img_gen_matrix.step=0
     cpb_img_gen_matrix_grid.cells_num=[]
@@ -378,21 +374,21 @@ def cpb_capinibal ( pipe, frames):
         # Loop over frames
         while (frames>=0):
             frames -= step
-            phase += speed
-            if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+            phase += Capinibal.speed
+            if (Capinibal.verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
             if (phase >= 1000) or (first_time):
-                if (verbose): print("new image")
+                if (Capinibal.verbose): print("new image")
                 ctx=ctxs[random.randrange(0, len(ctxs))] # FIXME!
                 first_time = False
                 phase=phase%1000
-                cpb_fill_color_gen (ctx, 3)
+                Capinibal.cpb_fill_color_gen (ctx, 3)
                 if (in_matrix == False):
                     cpb_textes = cpb_text_gen_solo()
                     blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
                 else:
                     cpb_textes = cpb_text_gen_full()
                     # FIXME image should be cleared when drawing function changes
-                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, cpb_random_color())
+                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, Capinibal.cpb_random_color())
                     blob = image.make_blob('RGB')
 
                 in_loop += 1
@@ -422,9 +418,6 @@ def cpb_capinibal ( pipe, frames):
 # main
 if __name__=="__main__":
 
-    capinibal = Capinibal()
-    #~ Capinibal.Effect_parameters.rows=5 # For testing only
-
     parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
     parser.add_argument('-o', '--output', dest='outputfile',
                        help='Output file')
@@ -443,15 +436,11 @@ if __name__=="__main__":
         sorted_by_key = sorted(args.items(), key=lambda x: x[0])
         print ('Arguments:\n', sorted_by_key, '\n')
 
-    capinibal.fps = args['fps']
-    fps=args['fps']
-    capinibal.verbose=args['verbose']
-    verbose=args['verbose']
-    capinibal.duration=args['duration']
-    duration=args['duration']
-    capinibal.frames = int(float(fps) * float(duration))
-    frames = int(float(fps) * float(duration))
-    capinibal.outputfile=args['outputfile']
+    Capinibal.fps = args['fps']
+    Capinibal.verbose=args['verbose']
+    Capinibal.verbose=args['verbose']
+    Capinibal.duration=args['duration']
+    Capinibal.frames = int(float(Capinibal.fps) * float(Capinibal.duration))
     outputfile=args['outputfile']
 
     encoder = None
@@ -465,16 +454,16 @@ if __name__=="__main__":
         print("Missing dependency : You need to install ffmpeg or avconv.")
         exit ()
 
-    if (verbose) : print ('Encoder selected:', encoder, '\n')
+    if (Capinibal.verbose) : print ('Encoder selected:', encoder, '\n')
 
-    cpb_setspeed(args['speed_of_change'])
+    Capinibal.cpb_setspeed(args['speed_of_change'])
 
     random.seed()
 
-    if(duration):
-        print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    if(Capinibal.duration):
+        print('Generating', Capinibal.frames, 'frames for', Capinibal.duration, 'seconds at', Capinibal.fps, 'fps, change every', 1000/Capinibal.speed, 'frame, with', encoder, 'as encoder.')
     else:
-        print('Generating frames at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+        print('Generating frames at', Capinibal.fps, 'fps, change every', 1000/Capinibal.speed, 'frame, with', encoder, 'as encoder.')
 
     try:
         server = CpbServer()
@@ -510,9 +499,9 @@ if __name__=="__main__":
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
+                    '-s', str(Capinibal.image_width)+'x'+str(Capinibal.image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
-                    '-r', fps, # frames per second
+                    '-r', Capinibal.fps, # frames per second
                     '-i', '-', # The input comes from a pipe
                     '-an', # Tells FFMPEG not to expect any audio
                     '-pix_fmt', 'yuv420p',
@@ -522,16 +511,16 @@ if __name__=="__main__":
         # Use given output file
         print ("The output file is :\n%s" % outputfile, file=sys.stderr)
         # No infinite duration!
-        if (frames<1):
+        if (Capinibal.frames<1):
             print("Non-zero duration required when using -o, aborting.", file=sys.stderr)
             sys.exit()
         cmdstring = [encoder,
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
+                    '-s', str(Capinibal.image_width)+'x'+str(Capinibal.image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
-                    '-r', fps, # frames per second
+                    '-r', Capinibal.fps, # frames per second
                     '-i', '-', # The input comes from a pipe
                     '-an', # Tells FFMPEG not to expect any audio
                     '-c:v', 'mjpeg',
@@ -546,9 +535,9 @@ if __name__=="__main__":
     
     # Here we loop
 
-    cpb_capinibal (pipe, frames)
+    cpb_capinibal (pipe, Capinibal.frames)
 
-    if (args['outputfile'] is None):
+    if (outputfile is None):
         print("Cleaning pipe stuff...", file=sys.stderr)
         fifo.close()
         os.remove(filename)
