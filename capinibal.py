@@ -52,6 +52,13 @@ class Capinibal:
     port = 1234
     outputfile = ""
     verbose = False
+    class Effect_parameters:
+        cols=2
+        rows=5
+        ctx = None
+        img = None
+        align_center = False
+        bg_color = Color('lightblue')
 
 #cpb_pattern = "CA{}I{}AL"
 #cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
@@ -201,8 +208,10 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False, bg_colo
     if (cpb_img_gen_matrix.step>=rows): cpb_img_gen_matrix.step=0
     #~ return img.clone()
 
-def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5 ):
+def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')): # , cols=2, rows=5 ):
     #~ with image as img: # Causes the image to be closed!
+    cols=Capinibal.Effect_parameters.cols
+    rows=Capinibal.Effect_parameters.rows
     if (verbose): print(img)
     grid_len = rows * cols
     col_width = image_width // cols
@@ -414,6 +423,7 @@ def cpb_capinibal ( pipe, frames):
 if __name__=="__main__":
 
     capinibal = Capinibal()
+    #~ Capinibal.Effect_parameters.rows=5 # For testing only
 
     parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
     parser.add_argument('-o', '--output', dest='outputfile',
