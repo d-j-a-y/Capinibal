@@ -44,6 +44,14 @@ import liblo
 # ~ class cpb_gen_color :
     # ~ def __init__ (self) :
 
+class Capinibal:
+    duration = 0
+    frame = 0
+    fps = 24
+    speed = 200
+    port = 1234
+    outputfile = ""
+    verbose = False
 
 #cpb_pattern = "CA{}I{}AL"
 #cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
@@ -65,7 +73,7 @@ def cpb_setspeed(s) :
     if (speed <1): speed=1
     if (speed > 1000): speed=1000
     if (verbose):
-        print("speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
+        print("Speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
 
 class CpbServer(liblo.ServerThread):
     def __init__(self):
@@ -270,6 +278,37 @@ def cpb_capinibal ( pipe, frames):
 # main
 if __name__=="__main__":
 
+    capinibal = Capinibal()
+
+    parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
+    parser.add_argument('-o', '--output', dest='outputfile',
+                       help='Output file')
+    parser.add_argument('-r', '--rate', dest='fps', default='24',
+                       help='Frames per second (default: 24)')
+    parser.add_argument('-d', '--duration', dest='duration', default='0',
+                       help='Seconds, 0 for infinite (default: 0)')
+    parser.add_argument('-s', '--speed', dest='speed_of_change', default='4',
+                       help='Speed of change per second (default: 4)')
+    parser.add_argument('-p', '--pipe', dest='pipename',
+                       help='Name of the pipe to stream to (default: generated name)')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                       help='Enable debug output (default: off)')
+    args = vars(parser.parse_args())
+    if args['verbose'] :
+        sorted_by_key = sorted(args.items(), key=lambda x: x[0])
+        print ('Arguments:\n', sorted_by_key, '\n')
+
+    capinibal.fps = args['fps']
+    fps=args['fps']
+    capinibal.verbose=args['verbose']
+    verbose=args['verbose']
+    capinibal.duration=args['duration']
+    duration=args['duration']
+    capinibal.frames = int(float(fps) * float(duration))
+    frames = int(float(fps) * float(duration))
+    capinibal.outputfile=args['outputfile']
+    outputfile=args['outputfile']
+
     encoder = None
     status, result = subprocess.getstatusoutput("avconv")
     if (status == 1):
@@ -281,31 +320,14 @@ if __name__=="__main__":
         print("Missing dependency : You need to install ffmpeg or avconv.")
         exit ()
 
-    parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
-    parser.add_argument('-o', '--output', dest='outputfile',
-                       help='Output file')
-    parser.add_argument('-r', '--rate', dest='fps', default='24',
-                       help='Frames per second')
-    parser.add_argument('-d', '--duration', dest='duration', default='0',
-                       help='Seconds, 0 for infinite')
-    parser.add_argument('-s', '--speed', dest='speed_of_change', default='4',
-                       help='Speed of change (changes per second)')
-    parser.add_argument('-p', '--pipe', dest='pipename',
-                       help='Name of the pipe to stream to, if missing, name is generated')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                       help='Enable debug output (default: off)')
-    args = vars(parser.parse_args())
-    #print(args)
+    if (verbose) : print ('Encoder selected:', encoder, '\n')
+
+    cpb_setspeed(args['speed_of_change'])
 
     random.seed()
 
-    fps=args['fps']
-    verbose=args['verbose']
-    duration=args['duration']
-    frames = int(float(fps) * float(duration))
-    outputfile=args['outputfile']
-    cpb_setspeed(args['speed_of_change'])
     print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+
     try:
         server = CpbServer()
     except (liblo.ServerError):
