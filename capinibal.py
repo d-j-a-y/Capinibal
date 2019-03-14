@@ -52,6 +52,13 @@ class Capinibal:
     port = 1234
     outputfile = ""
     verbose = False
+    class Effect_parameters:
+        cols=2
+        rows=5
+        ctx = None
+        img = None
+        align_center = False
+        bg_color = Color('lightblue')
 
 #cpb_pattern = "CA{}I{}AL"
 #cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
@@ -66,11 +73,14 @@ verbose = False
 speed = 200
 port = 1234
 fps = 24
+image_width = 1024
+image_height = 576
+# image = None
 
 def cpb_setspeed(s) :
     global speed, verbose
     speed=int(1000.0*float(s)/float(fps))
-    if (speed <1): speed=1
+    if (speed < 1): speed=1
     if (speed > 1000): speed=1000
     if (verbose):
         print("Speed:", float(s), "changes/s becomes", speed, "changes/1000 frames")
@@ -102,9 +112,9 @@ def cpb_text_gen_solo ():
     txt = txt + "AL"
     return txt
 
-def cpb_text_gen_full ():
+def cpb_text_gen_full (n=10):
     txt_list = []
-    for i in range (0, 10) :
+    for i in range (0, n) :
         txt_list.append (cpb_text_gen_solo())
     return txt_list
 
@@ -116,15 +126,18 @@ def cpb_get_text_metrics ( text_to_mesure , draw ):
     return metrics
 
 # toss : give kind of rand rythm
-def cpb_text_color_gen (ctx, coin = 1) :
+def cpb_random_color () :
+    # ~ color FFFFFF -> 16777215
+    color = random.randrange(0, 16777215, 15)
+    red = color >>16
+    green = ( color >> 8 ) & 0xFF
+    blue = color & 0xFF
+    # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
+    return Color('rgb({0},{1},{2})'.format(red,green,blue))
+
+def cpb_fill_color_gen (ctx, coin = 1) :
     if (cpb_toss (coin)) :
-        # ~ color FFFFFF -> 16777215
-        color = random.randrange(0, 16777215, 15)
-        red = color >>16
-        green = ( color >> 8 ) & 0xFF
-        blue = color & 0xFF
-        # ~ print ("color 0x%x , r 0x%x , g 0x%x , b 0x%x" % (color, red , green , blue))
-        ctx.fill_color = Color('rgb({0},{1},{2})'.format(red,green,blue))
+        ctx.fill_color = cpb_random_color ()
 
 def cpb_toss (coin) :
     coin = int(coin)
@@ -138,25 +151,136 @@ def cpb_toss (coin) :
 # Image generation routines
 #
 ############################
-def cpb_img_gen_matrix (cpb_textes, ctx, align_center = False):
-#    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-    with Image(width=1024, height=576, background=Color('lightblue')) as img:
-        half_width = 512;
-        if (verbose): print(img)
-        textes_len = int(len (cpb_textes) / 2)
-        with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-            for i in range (0, textes_len) :
-                metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
-                if (align_center) :
-                    clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
-                    clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-                else :
-                    clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
-                    clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
-                clone_ctx(img)
+def cpb_set_bg(ctx, bg_color):
+    #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
+    old_color=ctx.fill_color
+    ctx.fill_color=bg_color
+    ctx.color(0, 0, 'reset')          
+    ctx.fill_color=old_color
 
-        return img.clone()
-        # ~ display(img)
+def cpb_img_gen_matrix (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
+# FIXME hard-coded to 2x5 cells
+    half_width = image_width // 2
+    if (verbose): print(img)
+    textes_len = len (cpb_textes) // 2
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        cpb_set_bg(clone_ctx, bg_color)
+        for i in range (0, textes_len) :
+            metrics = cpb_get_text_metrics ( cpb_textes[i], ctx ) # left side text size
+            if (align_center) :
+                clone_ctx.text(half_width - int(metrics.text_width) - 1 , (1+i)*int(metrics.ascender), cpb_textes[i])
+                clone_ctx.text(half_width + 1, (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
+            else :
+                clone_ctx.text(5, (1+i)*int(metrics.ascender), cpb_textes[i])
+                clone_ctx.text(int(metrics.text_width), (1+i)*int(metrics.ascender), cpb_textes[i+textes_len])
+            clone_ctx(img)
+
+def cpb_img_gen_matrix_line (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue'), cols=2, rows=5):
+    if (verbose): print(img)
+    grid_len = rows * cols
+    col_width = image_width // cols
+    row_height = image_height // rows
+    textes_len = len (cpb_textes)
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0):
+            # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
+            cpb_set_bg(clone_ctx, bg_color)
+        y=cpb_img_gen_matrix.step
+        for x in range (0, cols):
+            texte_num = (x + cols * y) % textes_len
+            metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+            w=int(metrics.text_width)
+            h=int(metrics.ascender)
+            hmargin=1
+            if (align_center) :
+                hmargin=(col_width-w)//2
+            if (hmargin<0):
+                print('Alignment problem:', cpb_textes[texte_num], 'width:', w)
+                hmargin=0
+            vmargin=(row_height-h)//2
+            if (vmargin<0):
+                print('Alignment problem:', cpb_textes[texte_num], 'height:', h)
+                vmargin=0
+            clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, cpb_textes[texte_num])                
+            texte_num +=1 
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=rows): cpb_img_gen_matrix.step=0
+    #~ return img.clone()
+
+def cpb_img_gen_matrix_grid (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')): # , cols=2, rows=5 ):
+    #~ with image as img: # Causes the image to be closed!
+    cols=Capinibal.Effect_parameters.cols
+    rows=Capinibal.Effect_parameters.rows
+    if (verbose): print(img)
+    grid_len = rows * cols
+    col_width = image_width // cols
+    row_height = image_height // rows
+    textes_len = len (cpb_textes) # may be different from grid_len
+
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0 or cpb_img_gen_matrix_grid.cells_num==[]): #(cpb_img_gen_matrix.step==0):
+            cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
+            cpb_img_gen_matrix.step=0
+            # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
+            #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
+            cpb_set_bg(clone_ctx, bg_color)
+        k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
+        i = cpb_img_gen_matrix_grid.cells_num[k]
+        cpb_img_gen_matrix_grid.cells_num.pop(k)
+        x= i % cols
+        y= i // cols
+        texte_num = i % textes_len # in case there are less texts than cells
+        metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # text size
+        w=int(metrics.text_width)
+        h=int(metrics.ascender)
+        hmargin=1
+        if (align_center) :
+            hmargin=(col_width-w)//2
+        if (hmargin<0):
+            print('Alignment problem:', cpb_textes[texte_num], 'width:', w)
+            hmargin=0
+        vmargin=(row_height-h)//2
+        if (vmargin<0):
+            print('Alignment problem:', cpb_textes[texte_num], 'height:', h)
+            vmargin=0
+        clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, cpb_textes[texte_num])
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=grid_len): cpb_img_gen_matrix.step=0
+    #~ return img.clone()
+
+def cpb_img_gen_cloud (cpb_textes, ctx, img, align_center = False, bg_color = Color('lightblue')):
+    #~ with image as img: # Causes the image to be closed!
+    if (verbose): print(img)
+    #~ textes_len = len (cpb_textes)
+    #~ texte_num=random.randrange(0, textes_len)
+    text=random.choice(cpb_textes)
+    cloud_len=15
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if (cpb_img_gen_matrix.step==0):
+            cpb_set_bg(clone_ctx, bg_color)
+        clone_ctx.font_size = int (random.randrange(55, 200, 15))
+        if(verbose): print ("font size " , clone_ctx.font_size)
+        metrics = cpb_get_text_metrics ( text, clone_ctx ) # text size
+        w=int(metrics.text_width)
+        h=int(metrics.ascender)
+        if (align_center):
+            x=(image_width-w)//2
+        else:
+            #~ x=random.randrange(0, image_width-w)
+            x=int(random.gauss((image_width-w)//2, (image_width-w)//6))
+            if x<0: x=0
+            if x>image_width-w: x=image_width-w
+        #~ y=random.randrange(h, image_height)
+        y=int(random.gauss((image_height-h)//2, (image_height-h)//6))
+        if y<0: y=0
+        if y>image_height-h: y=image_height-h
+        y+=h
+        clone_ctx.text(x, y, text)
+        clone_ctx(img)
+    cpb_img_gen_matrix.step+=1
+    if (cpb_img_gen_matrix.step>=cloud_len): cpb_img_gen_matrix.step=0
 
 # currently unused
 def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
@@ -167,9 +291,9 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
         candidate_coord.append(i)
 
     clone_ctx = Drawing(drawing=ctx)
-    with Image(width=1024, height=576, background=Color('lightsalmon')) as img:
-        quarter_width = 256
-        deci_height = 57
+    with Image(width=image_width, height=image_height, background=Color('lightsalmon')) as img:
+        quarter_width = image_width / 4
+        deci_height = int(image_height / 10)
         for i in range (0, coord_len) :
             print(img)
             coord_index = random.randrange(0, len(candidate_coord))
@@ -186,9 +310,9 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe) :
             pipe.stdin.write(img.make_blob('RGB'))
 
 def cpb_img_gen_solo_centered (cpb_texte, ctx):
-    metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same lenght, loop to get max widht ?
+    metrics = cpb_get_text_metrics ( cpb_texte, ctx ) # FIXME all texts are not same length, loop to get max widht ?
 #    with Image(width=int(metrics.text_width)*2+15, height=int(metrics.text_height)*5, background=Color('lightblue')) as img:
-    with Image(width=1024, height=576, background=Color('lightgreen')) as img:
+    with Image(width=image_width, height=image_height, background=Color('lightgreen')) as img:
         if (verbose): print(img)
         textes_len = int(len (cpb_texte) / 2)
         with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -214,71 +338,92 @@ def cpb_img_gen_solo_rdn_size_centered (cpb_texte, ctx, coin=1) :
 #
 #########################################
 def cpb_capinibal ( pipe, frames):
-    with Drawing() as ctx :
-        ctx.font = './Sudbury_Basin_3D.ttf' #FIXME !
-        ctx.font_size = 110
-        ctx.fill_color = Color('black')
-
-        while False:
-            cpb_text_color_gen (ctx, 3)
-            cpb_textes = cpb_text_gen_solo()
-            blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
-            pipe.stdin.write ( blob )
+    ctx1=Drawing()
+    ctx1.font = './Sudbury_Basin_3D.ttf' #FIXME !
+    ctx1.font_size = 107
+    ctx1.fill_color = Color('black')
+    ctx2=Drawing()
+    ctx2.font = './Sudbury_Basin.ttf' #FIXME !
+    ctx2.font_size = 107
+    ctx2.fill_color = Color('black')
+    ctxs=[ctx1, ctx2]
+    cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
+    #~ cpb_funs=[cpb_img_gen_cloud]
+    cpb_fun=0
+    
+    while False:
+        cpb_fill_color_gen (ctx, 3)
+        cpb_textes = cpb_text_gen_solo()
+        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
+        pipe.stdin.write ( blob )
 
 #        return
 
-        step = 1 if (frames>0) else 0 # 0 => infinite loop
-        in_loop = 0 # number of matrix image
-        in_blink = 5 # number of matrix(s) loop
-        in_matrix = False
-        matrix_align = False
-        phase = 0
-        blob = None
-        first_time = True
-        try:
-            # Loop over frames
-            while (frames>=0):
-                frames -= step
-                phase += speed
-                if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
-                if (phase >= 1000) or (first_time):
-                    if (verbose): print("new image")
-                    first_time = False
-                    phase=phase%1000
-                    cpb_text_color_gen (ctx, 3)
-                    if (in_matrix == False):
-                        cpb_textes = cpb_text_gen_solo()
-                        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+    step = 1 if (frames>0) else 0 # 0 => infinite loop
+    in_loop = 0 # number of matrix image
+    in_blink = 5 # number of matrix(s) loop
+    in_matrix = False
+    matrix_align = False
+    phase = 0
+    blob = None
+    first_time = True
+
+    #~ global image
+    image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+    #~ cpb_img_gen_matrix.image=Image(width=image_width, height=image_height, background=Color('lightblue'))
+    cpb_img_gen_matrix.step=0
+    cpb_img_gen_matrix_grid.cells_num=[]
+    
+    try:
+        # Loop over frames
+        while (frames>=0):
+            frames -= step
+            phase += speed
+            if (verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+            if (phase >= 1000) or (first_time):
+                if (verbose): print("new image")
+                ctx=ctxs[random.randrange(0, len(ctxs))] # FIXME!
+                first_time = False
+                phase=phase%1000
+                cpb_fill_color_gen (ctx, 3)
+                if (in_matrix == False):
+                    cpb_textes = cpb_text_gen_solo()
+                    blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+                else:
+                    cpb_textes = cpb_text_gen_full()
+                    # FIXME image should be cleared when drawing function changes
+                    cpb_funs[cpb_fun](cpb_textes, ctx, image, matrix_align, cpb_random_color())
+                    blob = image.make_blob('RGB')
+
+                in_loop += 1
+                if (in_loop > 24): # 1 s @ 24 fps
+                    in_matrix = True if (in_matrix == False) else False
+                    in_blink = in_blink - 1
+                    if (in_blink > 0):
+                        in_loop = 0
+                        cpb_fun=(cpb_fun+1)%len(cpb_funs)
+                        cpb_img_gen_matrix.step=0
                     else:
-                        cpb_textes = cpb_text_gen_full()
-                        blob = cpb_img_gen_matrix(cpb_textes, ctx, matrix_align).make_blob('RGB')
+                        if (in_blink < - 20):
+                            matrix_align = True if (matrix_align == False) else False
+                            in_blink = 5
 
-                    in_loop += 1
-                    if (in_loop > 24): # 1 s @ 24 fps
-                        in_matrix = True if (in_matrix == False) else False
-                        in_blink = in_blink - 1
-                        if (in_blink > 0):
-                            in_loop = 0
-                        else:
-                            if (in_blink < - 20):
-                                matrix_align = True if (matrix_align == False) else False
-                                in_blink = 5
+            pipe.stdin.write( blob )
 
-                pipe.stdin.write( blob )
-
-            print("All frames generated")
-        except KeyboardInterrupt: # Use this instead of signal.SIGINT
-            print("Interrupted, exiting!")
+        print("All frames generated")
+    except KeyboardInterrupt: # Use this instead of signal.SIGINT
+        print("Interrupted, exiting!")
 #        except SystemExit as e:
-        except BrokenPipeError:
-            print("Pipe broken, exiting!")
-        return
+    except BrokenPipeError:
+        print("Pipe broken, exiting!")
+    return
 
 
 # main
 if __name__=="__main__":
 
     capinibal = Capinibal()
+    #~ Capinibal.Effect_parameters.rows=5 # For testing only
 
     parser = argparse.ArgumentParser(description='Generate another anticapitalist moving images to a named pipe...or not.')
     parser.add_argument('-o', '--output', dest='outputfile',
@@ -326,7 +471,10 @@ if __name__=="__main__":
 
     random.seed()
 
-    print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    if(duration):
+        print('Generating', frames, 'frames for', duration, 'seconds at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
+    else:
+        print('Generating frames at', fps, 'fps, change every', 1000/speed, 'frame, with', encoder, 'as encoder.')
 
     try:
         server = CpbServer()
@@ -362,7 +510,7 @@ if __name__=="__main__":
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', '1024x576', # size of one frame
+                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
                     '-r', fps, # frames per second
                     '-i', '-', # The input comes from a pipe
@@ -381,7 +529,7 @@ if __name__=="__main__":
                     '-y', # (optional) overwrite output file if it exists
                     '-f', 'rawvideo', #TODO '-f', 'image2pipe', '-vcodec', 'mjpeg' avec blob('jpeg')
                     '-c:v','rawvideo',
-                    '-s', '1024x576', # size of one frame
+                    '-s', str(image_width)+'x'+str(image_height), # size of one frame
                     '-pix_fmt', 'rgb24',
                     '-r', fps, # frames per second
                     '-i', '-', # The input comes from a pipe
