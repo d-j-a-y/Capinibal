@@ -121,6 +121,27 @@ class Capinibal:
             max_height=max(max_height, metrics.text_height)
         return max_width, max_height
 
+    def cpb_set_scale_get_rows(cpb_textes, ctx, col_width):
+        # Compute scale so that largest text fits horizontally
+        max_width=0
+        max_height=0
+        height=0
+        for t in cpb_textes:
+            metrics=cpb_get_text_metrics ( t, ctx )
+            if (metrics.text_width>max_width):
+                max_width=metrics.text_width
+                height=metrics.text_height
+            if (metrics.text_height>max_height):
+                max_height=metrics.text_height
+        scale=col_width/max_width
+        # Reduce scale if tallest text won't fit a single row after scaling
+        if (max_height*scale>Capinibal.image_height):
+            scale=Capinibal.image_height/max_height
+        # Apply scale
+        if(Capinibal.verbose): print("Font scale:", clone_ctx.font_size, "*", scale)
+        ctx.font_size*=scale # Should we make font_size an int?
+        return Capinibal.image_height//int(height*scale)
+
     class Effect_parameters:
         cols=2
         rows=5
@@ -190,7 +211,11 @@ def cpb_get_text_metrics (text_to_measure, draw):
 #
 ############################
 def cpb_img_gen_matrix (cpb_textes, ctx, img):
+<<<<<<< HEAD
     if Capinibal.verbose: print(img)
+=======
+    if (Capinibal.verbose): print(img)
+>>>>>>> More experiments with variable grid
     bg_color=Capinibal.Effect_parameters.bg_color
     align_center=Capinibal.Effect_parameters.align_center
     cols=Capinibal.Effect_parameters.cols
@@ -201,6 +226,7 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img):
 
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
         Capinibal.cpb_set_bg(clone_ctx, bg_color)
+<<<<<<< HEAD
         # Fill grid with text
         for i in range (0, cols):
             for j in range (0, rows):
@@ -215,6 +241,24 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img):
                     hmargin = Capinibal.hspacing // 2
                     vmargin = Capinibal.vspacing // 2
                 clone_ctx.text(i*col_width+hmargin, j*row_height+vmargin+a, text) # Fill to bottom
+=======
+        #~ Capinibal.cpb_set_scale(cpb_textes, clone_ctx, col_width, row_height)
+        rows=Capinibal.cpb_set_scale_get_rows(cpb_textes, clone_ctx, col_width)
+        row_height = Capinibal.image_height // rows
+        #~ if(Capinibal.verbose): 
+            #~ print(rows, "row(s),", cols, "column(s), font size:", clone_ctx.font_size)
+        # Fill grid
+        for i in range (0, cols) :
+            for j in range (0, rows) :
+                texte_num = (i + cols * j) % textes_len
+                metrics = cpb_get_text_metrics ( cpb_textes[texte_num], ctx ) # left side text size
+                if (align_center) :
+                    hmargin=(col_width-int(metrics.text_width))//2
+                else :
+                    hmargin=5 # FIXME
+                #~ clone_ctx.text(hmargin+i*col_width, (1+j)*int(metrics.ascender), cpb_textes[texte_num]) # Compact lines
+                clone_ctx.text(hmargin+i*col_width, (1+j)*row_height, cpb_textes[texte_num]) # Fill to bottom
+>>>>>>> More experiments with variable grid
                 clone_ctx(img)
 
 def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
@@ -432,6 +476,7 @@ def cpb_capinibal (pipe, frames):
         while frames>=0:
             frames -= step
             phase += Capinibal.speed
+<<<<<<< HEAD
             if Capinibal.verbose:
                 print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase)
             if phase >= 1000: # Time to generate a new image!
@@ -488,6 +533,25 @@ def cpb_capinibal (pipe, frames):
                         cpb_funs[cpb_fun](cpb_textes, ctx, image)
                         if Capinibal.Effect_parameters.step == 0:
                             break
+=======
+            if (Capinibal.verbose): print ("frames:", frames, " in_loop:", in_loop, " in_blink:", in_blink, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase )
+            if (phase >= 1000) or (first_time):
+                if (Capinibal.verbose): print("new image")
+                ctx=ctxs[random.randrange(0, len(ctxs))] # FIXME!
+                first_time = False
+                phase=phase%1000
+                Capinibal.cpb_fill_color_gen (ctx, 3)
+                if (in_matrix == False):
+                    cpb_textes = cpb_text_gen_solo()
+                    blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5 ).make_blob('RGB')
+                else:
+                    cpb_textes = cpb_text_gen_full()
+                    # FIXME image should be cleared when drawing function changes
+                    Capinibal.Effect_parameters.bg_color=Capinibal.cpb_random_color()
+                    #~ Capinibal.Effect_parameters.rows=random.randrange(3, 10)
+                    Capinibal.Effect_parameters.cols=random.randrange(2, 7)
+                    cpb_funs[cpb_fun](cpb_textes, ctx, image)
+>>>>>>> More experiments with variable grid
                     blob = image.make_blob('RGB')
                 else:
                     # Single text
