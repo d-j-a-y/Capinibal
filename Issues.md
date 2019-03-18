@@ -37,7 +37,12 @@ l’intolérance ou la répression autoritaire.
 - temporary automomous zone
 ** negative
 - stock market pluvalue (no downvalue counterside : market crash could not be totaly considered has 'goodnews')
+https://www.euronext.com/pt-pt/reports-statistics/cash/daily-statistics
 - cumul des emissions carbonne "cait climate data explorer 2015" / http://cait.wri.org
+- qualite de l'air'
+- flightradar24
+
+--What data sources are available online?
 
 # Issues
 * Pipe not close on ctrl-c
