@@ -110,7 +110,17 @@ class Capinibal:
     def cpb_setspeed(speed):
         Capinibal.speed=cpb_clip(int(1000.0*float(speed)/float(Capinibal.fps)), 1, 1000)
         if Capinibal.verbose:
-            print("Speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
+            print("Set speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
+
+    def cpb_increase(speed):
+        Capinibal.speed+=speed
+        if Capinibal.verbose:
+            print("Increase speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
+
+    def cpb_decrease(speed):
+        Capinibal.speed-=speed
+        if Capinibal.verbose:
+            print("Decrase speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
 
     def cpb_get_max_metrics(texts, ctx):
         max_width=0
@@ -151,13 +161,27 @@ class CpbServer(liblo.ServerThread):
     @liblo.make_method('/cpb/speed', 'f')
     def speed_callback(self, path, args):
         if(Capinibal.verbose):
-            print("received OSC message '%s' with argument: %f" % (path, args[0]))
-        if(Capinibal.verbose): print("Old speed:", Capinibal.speed)
+            print("Received OSC message '%s' with argument: %f" % (path, args[0]))
+            print("Old speed:", Capinibal.speed)
         Capinibal.cpb_setspeed(args[0])
+
+    @liblo.make_method('/cpb/increase', 'i')
+    def increase_callback(self, path, args):
+        if(Capinibal.verbose):
+            print("Received OSC message '%s' with argument: %d" % (path, args[0]))
+            print("Old speed:", Capinibal.speed)
+        Capinibal.cpb_increase(args[0])
+
+    @liblo.make_method('/cpb/decrease', 'i')
+    def decrease_callback(self, path, args):
+        if(Capinibal.verbose):
+            print("Received OSC message '%s' with argument: %d" % (path, args[0]))
+            print("Old speed:", Capinibal.speed)
+        Capinibal.cpb_decrease(args[0])
 
     @liblo.make_method(None, None)
     def fallback(self, path, args):
-        print("received unknown OSC message '%s'" % path)
+        print("Warning : received unknown OSC message '%s'" % path)
 
 def cpb_text_gen_solo ():
     return random.choice(Capinibal.texts)
