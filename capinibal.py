@@ -286,9 +286,12 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
             #~ cpb_img_gen_matrix_grid.texts=cpb_textes
             if Capinibal.verbose: print(cpb_img_gen_matrix_grid.rows, 'rows ', cpb_img_gen_matrix_grid.row_height, 'tall.')
         #~ clone_ctx.font_size = cpb_img_gen_matrix_grid.font_size
-        k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
-        i = cpb_img_gen_matrix_grid.cells_num[k]
-        cpb_img_gen_matrix_grid.cells_num.pop(k)
+        if Capinibal.Effect_parameters.random_order :
+            k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
+            i = cpb_img_gen_matrix_grid.cells_num[k]
+            cpb_img_gen_matrix_grid.cells_num.pop(k)
+        else:
+            i = Capinibal.Effect_parameters.step
         x = i % cols
         y = i // cols
         text = cpb_textes[i % textes_len]
@@ -453,6 +456,7 @@ def cpb_capinibal (pipe, frames):
                     blinking = random.random() > 0.8
                     in_matrix = random.random() > 0.5
                     matrix_align = random.random() > 0.5
+                    Capinibal.Effect_parameters.random_order = random.random() > 0.5
                     if Capinibal.verbose:
                         print("new sequence for", effect_images, "images, blinking:", blinking, "in matrix:", in_matrix,".")
                     #~ Capinibal.Effect_parameters.step = 0 # Force effect re-init
