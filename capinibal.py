@@ -221,13 +221,12 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img):
 
 def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
     # generate a matrix image, one row at a time
-    # What about displaying rows in random order?
     if Capinibal.verbose: print(img)
     bg_color = Capinibal.Effect_parameters.bg_color
     align_center = Capinibal.Effect_parameters.align_center
-    cols=Capinibal.Effect_parameters.cols
+    cols = Capinibal.Effect_parameters.cols
     col_width = Capinibal.image_width // cols
-    rows=Capinibal.Effect_parameters.rows
+    rows = Capinibal.Effect_parameters.rows
     row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes)
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -262,6 +261,49 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
             clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, text)
         clone_ctx(img)
     Capinibal.Effect_parameters.step=(Capinibal.Effect_parameters.step+1) % rows
+
+def cpb_img_gen_matrix_col (cpb_textes, ctx, img):
+    # generate a matrix image, one column at a time
+    if Capinibal.verbose: print(img)
+    bg_color = Capinibal.Effect_parameters.bg_color
+    align_center = Capinibal.Effect_parameters.align_center
+    cols = Capinibal.Effect_parameters.cols
+    col_width = Capinibal.image_width // cols
+    rows = Capinibal.Effect_parameters.rows
+    row_height = Capinibal.image_height // rows
+    textes_len = len (cpb_textes)
+    with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
+        if Capinibal.verbose: print('step ', Capinibal.Effect_parameters.step)
+        if Capinibal.Effect_parameters.step==0:
+            # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
+            Capinibal.cpb_set_bg(clone_ctx, bg_color)
+            cpb_img_gen_matrix_col.cols_num = list(range(0, cols))
+        if Capinibal.Effect_parameters.random_order :
+            k = random.randrange(0, len(cpb_img_gen_matrix_col.cols_num))
+            x = cpb_img_gen_matrix_col.cols_num[k]
+            cpb_img_gen_matrix_col.cols_num.pop(k)
+        else:
+            x = Capinibal.Effect_parameters.step
+        
+        for y in range (0, rows):
+            text = cpb_textes[(x + cols * y) % textes_len]
+            metrics = cpb_get_text_metrics (text, clone_ctx) # text size
+            w = int(metrics.text_width)
+            h = int(metrics.ascender)
+            hmargin=Capinibal.hspacing//2
+            if (align_center):
+                hmargin = (col_width-w) // 2
+            if (hmargin<0):
+                print('Alignment problem:', text, 'width:', w)
+                hmargin = 0
+            vmargin=(row_height-h) // 2
+            if (vmargin<0):
+                print('Alignment problem:', text, 'y:', y, 'row height:', row_height,
+                 'rows:', rows, 'text height:', h, 'font size:', clone_ctx.font_size)
+                vmargin = 0
+            clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+h, text)
+        clone_ctx(img)
+    Capinibal.Effect_parameters.step=(Capinibal.Effect_parameters.step+1) % cols
 
 def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
     # generate a matrix image, one cell at a time
@@ -411,7 +453,7 @@ def cpb_capinibal (pipe, frames):
     #~ print (ctxs, Capinibal.fonts, Capinibal.max_width, Capinibal.max_height)
         
     cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
-    #~ cpb_funs=[cpb_img_gen_matrix_grid] # Use this for testing a single effect
+    #~ cpb_funs=[cpb_img_gen_matrix_col] # Use this for testing a single effect
     cpb_fun=0
     
     while False:
