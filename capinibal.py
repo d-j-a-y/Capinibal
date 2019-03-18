@@ -355,7 +355,7 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
             # FIXME! could be visually interesting to optionally keep same context for all steps
             cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
             #~ cpb_img_gen_matrix_grid.texts=cpb_textes
-            if Capinibal.verbose: print(cpb_img_gen_matrix_grid.rows, 'rows ', cpb_img_gen_matrix_grid.row_height, 'tall.')
+            if Capinibal.verbose: print(rows, 'rows ', row_height, 'tall.')
         #~ clone_ctx.font_size = cpb_img_gen_matrix_grid.font_size
         if Capinibal.Effect_parameters.random_order :
             k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
