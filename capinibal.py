@@ -129,6 +129,7 @@ class Capinibal:
         align_center = False
         bg_color = Color('lightblue')
         step = 0
+        random_order = True
         # ~ def get_param()
         # ~ def inc_rand_param()
         # ~ def dec_rand_param()
@@ -234,7 +235,13 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
         if Capinibal.Effect_parameters.step==0:
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
             Capinibal.cpb_set_bg(clone_ctx, bg_color)
-        y = Capinibal.Effect_parameters.step
+            cpb_img_gen_matrix_line.lines_num = list(range(0, rows))
+        if Capinibal.Effect_parameters.random_order :
+            k = random.randrange(0, len(cpb_img_gen_matrix_line.lines_num))
+            y = cpb_img_gen_matrix_line.lines_num[k]
+            cpb_img_gen_matrix_line.lines_num.pop(k)
+        else:
+            y = Capinibal.Effect_parameters.step
         
         for x in range (0, cols):
             text = cpb_textes[(x + cols * y) % textes_len]
