@@ -190,6 +190,7 @@ def cpb_get_text_metrics (text_to_measure, draw):
 #
 ############################
 def cpb_img_gen_matrix (cpb_textes, ctx, img):
+    # Generate complete matrix in one step
     if Capinibal.verbose: print(img)
     bg_color=Capinibal.Effect_parameters.bg_color
     align_center=Capinibal.Effect_parameters.align_center
@@ -320,10 +321,8 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img):
         if (align_center):
             x = (Capinibal.image_width-w)//2
         else:
-            #~ x=random.randrange(0, image_width-w)
             x = int(random.gauss((Capinibal.image_width-w)//2, (Capinibal.image_width-w)//6))
             x = cpb_clip(x, 0, Capinibal.image_width-w)
-        #~ y=random.randrange(a, image_height)
         y = int(random.gauss((Capinibal.image_height-a)//2, (Capinibal.image_height-a)//6))
         y = cpb_clip(y, 0, Capinibal.image_height-a)+a
         clone_ctx.text(x, y, text)
