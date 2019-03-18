@@ -130,6 +130,7 @@ class Capinibal:
         bg_color = Color('lightblue')
         step = 0
         random_order = True
+        reverse_order = True
         # ~ def get_param()
         # ~ def inc_rand_param()
         # ~ def dec_rand_param()
@@ -240,7 +241,9 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
             y = cpb_img_gen_matrix_line.lines_num[k]
             cpb_img_gen_matrix_line.lines_num.pop(k)
         else:
-            y = Capinibal.Effect_parameters.step
+            y = Capinibal.Effect_parameters.step % rows
+            if Capinibal.Effect_parameters.reverse_order:
+                y = rows - y - 1
         
         for x in range (0, cols):
             text = cpb_textes[(x + cols * y) % textes_len]
@@ -283,7 +286,9 @@ def cpb_img_gen_matrix_col (cpb_textes, ctx, img):
             x = cpb_img_gen_matrix_col.cols_num[k]
             cpb_img_gen_matrix_col.cols_num.pop(k)
         else:
-            x = Capinibal.Effect_parameters.step
+            x = Capinibal.Effect_parameters.step % cols
+            if Capinibal.Effect_parameters.reverse_order:
+                x = cols - x - 1
         
         for y in range (0, rows):
             text = cpb_textes[(x + cols * y) % textes_len]
@@ -336,6 +341,9 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
             i = Capinibal.Effect_parameters.step
         x = i % cols
         y = i // cols
+        if Capinibal.Effect_parameters.reverse_order:
+            x = cols - x - 1
+            y = rows - y - 1
         text = cpb_textes[i % textes_len]
         metrics = cpb_get_text_metrics (text, clone_ctx) # text size
         w = int(metrics.text_width)
@@ -498,7 +506,8 @@ def cpb_capinibal (pipe, frames):
                     blinking = random.random() > 0.8
                     in_matrix = random.random() > 0.5
                     matrix_align = random.random() > 0.5
-                    Capinibal.Effect_parameters.random_order = random.random() > 0.5
+                    Capinibal.Effect_parameters.random_order = random.random() > 0.33
+                    Capinibal.Effect_parameters.reverse_order = random.random() > 0.5
                     if Capinibal.verbose:
                         print("new sequence for", effect_images, "images, blinking:", blinking, "in matrix:", in_matrix,".")
                     #~ Capinibal.Effect_parameters.step = 0 # Force effect re-init
