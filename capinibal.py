@@ -484,7 +484,7 @@ def cpb_capinibal (pipe, frames):
     ctx_count = len(ctxs)
     #~ print (ctxs, Capinibal.fonts, Capinibal.max_width, Capinibal.max_height)
         
-    cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid]
+    cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid, cpb_img_gen_matrix_col]
     #~ cpb_funs=[cpb_img_gen_matrix_col] # Use this for testing a single effect
     cpb_fun=0
     
