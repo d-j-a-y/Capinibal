@@ -41,6 +41,9 @@ https://www.euronext.com/pt-pt/reports-statistics/cash/daily-statistics
 - cumul des emissions carbonne "cait climate data explorer 2015" / http://cait.wri.org
 - qualite de l'air'
 - flightradar24
+- https://fr.flightaware.com/live/cancelled/today ou https://www.flightstats.com/v2/global-cancellations-and-delays [prendre last day pour etre sur de maj?]
+- https://uk.flightaware.com/commercial/data/fuelprices - Feed samples
+
 
 --What data sources are available online?
 
