@@ -510,7 +510,7 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img):
             x = cpb_clip(x, 0, Capinibal.image_width-w)
         y = int(random.gauss((Capinibal.image_height-a)//2, (Capinibal.image_height-a)//6))
         y = cpb_clip(y, 0, Capinibal.image_height-a)+a
-        print(x, y, text)
+        if Capinibal.verbose: print(x, y, text)
         clone_ctx.text(x, y, text)
         clone_ctx(img)
     Capinibal.Effect_parameters.step = (Capinibal.Effect_parameters.step + 1) % cloud_len
