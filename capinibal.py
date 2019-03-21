@@ -218,7 +218,7 @@ def cpb_get_cached_text_w_h_a (text_to_measure, ctx, t = None, f = None):
         m = Capinibal.text_font_ref_metrics[f][t]
         scale = ctx.font_size/Capinibal.ref_font_size
         if Capinibal.verbose:
-            print('metrics cache hit at', f, t, 'font size', ctx.font_size, 'scale:', round(scale, 3), 'w:', w, 'h:', h, 'a:', a)
+            print('metrics cache hit at', f, t, 'font size', ctx.font_size, 'scale:', round(scale, 3))
     except:
         if Capinibal.verbose:
             print('metrics cache miss at', f, t)
@@ -438,8 +438,9 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
     Capinibal.Effect_parameters.step = (Capinibal.Effect_parameters.step + 1) % grid_len
 
 def cpb_img_gen_cloud (cpb_textes, ctx, img):
+    # todo: not always centered
+    # How could we prevent multistep from main loop?
     if Capinibal.verbose: print(img)
-    #~ bg_color = Capinibal.Effect_parameters.bg_color
     align_center = Capinibal.Effect_parameters.align_center
     cloud_len = random.randint(6, 12) # FIXME
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
@@ -460,6 +461,7 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img):
             x = cpb_clip(x, 0, Capinibal.image_width-w)
         y = int(random.gauss((Capinibal.image_height-a)//2, (Capinibal.image_height-a)//6))
         y = cpb_clip(y, 0, Capinibal.image_height-a)+a
+        print(x, y, text)
         clone_ctx.text(x, y, text)
         clone_ctx(img)
     Capinibal.Effect_parameters.step = (Capinibal.Effect_parameters.step + 1) % cloud_len
@@ -567,7 +569,7 @@ def cpb_capinibal (pipe, frames):
                     #~ 'metrics:', Capinibal.text_font_ref_metrics[f][t]
                     )
             print('max_width:', Capinibal.max_width[f], 'max_height:', Capinibal.max_height[f])
-            print("=" * 80)
+            print("=" * 79)
 
     ctx_count = len(ctxs)
     #~ print (ctxs, Capinibal.fonts, Capinibal.max_width, Capinibal.max_height)
