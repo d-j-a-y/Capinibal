@@ -113,12 +113,12 @@ class Capinibal:
             print("Set speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
 
     def cpb_increase(speed):
-        Capinibal.speed+=speed
+        Capinibal.speed=cpb_clip(Capinibal.speed+speed, 1, 1000)
         if Capinibal.verbose:
             print("Increase speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
 
     def cpb_decrease(speed):
-        Capinibal.speed-=speed
+        Capinibal.speed=cpb_clip(Capinibal.speed-speed, 1, 1000)
         if Capinibal.verbose:
             print("Decrase speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
 
