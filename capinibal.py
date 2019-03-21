@@ -219,11 +219,12 @@ def cpb_get_cached_text_w_h_a (text_to_measure, ctx, t = None, f = None):
         scale = ctx.font_size/Capinibal.ref_font_size
         if Capinibal.verbose:
             print('metrics cache hit at', f, t, 'font size', ctx.font_size, 'scale:', round(scale, 3))
-    except:
+    except IndexError:
         if Capinibal.verbose:
             print('metrics cache miss at', f, t)
         dummy_image = Image(filename='wizard:')
         m = ctx.get_font_metrics(dummy_image, text_to_measure)
+        scale = 1.0
     return int(m.text_width*scale + 0.5), int(m.text_height*scale + 0.5), int(m.ascender*scale + 0.5)
 
 def cpb_get_text_metrics (text_to_measure, draw):
@@ -251,6 +252,44 @@ def cpb_get_text_metrics (text_to_measure, draw):
     #~ print("=" * 79)
     return metrics
 
+def cpb_fill_metrics_cache(ctxs):
+    # Pre-compute metrics
+    for f in range(len(Capinibal.fonts)):
+        Capinibal.ctx_num = f
+        ctx = Drawing()
+        ctx.font = './' + Capinibal.fonts[f] #FIXME !
+        ctx.font_size = Capinibal.ref_font_size
+        ctx.fill_color = Color('black')
+        # Cache metrics for each text for each font
+        row=[]
+        max_width = 0
+        max_height = 0
+        for t in range(len(Capinibal.texts)):
+            # Capinibal.text_font_ref_metrics[f][t]=
+            metrics = cpb_get_text_metrics(Capinibal.texts[t],ctx)
+            max_width = max(metrics.text_width, max_width)
+            max_height = max(metrics.text_height, max_height)
+            row.append(metrics)
+        Capinibal.text_font_ref_metrics.append(row)
+        Capinibal.max_width.append(max_width)
+        Capinibal.max_height.append(max_height)
+        ctxs.append(ctx)
+    # Max values across all fonts, all texts
+    Capinibal.max_max_width = max(Capinibal.max_width)
+    Capinibal.max_max_height = max(Capinibal.max_height)
+
+def cpb_print_metrics_cache():
+    print('Reference font size:', Capinibal.ref_font_size)
+    for f in range(len(Capinibal.fonts)):
+        for t in range(len(Capinibal.texts)):
+            print('Font', f, ':', Capinibal.fonts[f], 'text', t, ':', Capinibal.texts[t],
+                'w:', Capinibal.text_font_ref_metrics[f][t].text_width,
+                'h:', Capinibal.text_font_ref_metrics[f][t].text_height,
+                'a:', Capinibal.text_font_ref_metrics[f][t].ascender,
+                #~ 'metrics:', Capinibal.text_font_ref_metrics[f][t]
+                )
+        print('max_width:', Capinibal.max_width[f], 'max_height:', Capinibal.max_height[f])
+        print("=" * 79)
 
 #############
 #
@@ -275,12 +314,14 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img):
         for i in range (0, cols):
             for j in range (0, rows):
                 # What about changing colors between rows/between cells?
-                text = cpb_textes[(i + cols * j) % textes_len]
+                text_num = (i + cols * j) % textes_len
+                text = cpb_textes[text_num]
+                #~ text = cpb_textes[(i + cols * j) % textes_len]
                 #~ metrics = cpb_get_text_metrics (text, ctx) # FIXME should be pre-computed
                 #~ a = metrics.ascender
                 #~ w = metrics.text_width
                 #~ h = metrics.text_height
-                w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx)
+                w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx, t=text_num)
                 if (align_center):
                     hmargin = (col_width-int(w))//2
                     vmargin = (row_height-int(h))//2
@@ -317,11 +358,12 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
                 y = rows - y - 1
         
         for x in range (0, cols):
-            text = cpb_textes[(x + cols * y) % textes_len]
+            text_num = (x + cols * y) % textes_len
+            text = cpb_textes[text_num]
             #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
             #~ w = int(metrics.text_width)
             #~ a = int(metrics.ascender)
-            w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx)
+            w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx, t=text_num)
             hmargin = Capinibal.hspacing//2
             if (align_center):
                 hmargin = (col_width-w) // 2
@@ -363,11 +405,12 @@ def cpb_img_gen_matrix_col (cpb_textes, ctx, img):
                 x = cols - x - 1
         
         for y in range (0, rows):
-            text = cpb_textes[(x + cols * y) % textes_len]
+            text_num = (x + cols * y) % textes_len
+            text = cpb_textes[text_num]
             #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
             #~ w = int(metrics.text_width)
             #~ a = int(metrics.ascender)
-            w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx)
+            w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx, t=text_num)
             hmargin=Capinibal.hspacing//2
             if (align_center):
                 hmargin = (col_width-w) // 2
@@ -417,12 +460,13 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
         if Capinibal.Effect_parameters.reverse_order:
             x = cols - x - 1
             y = rows - y - 1
-        text = cpb_textes[i % textes_len]
+        text_num = i % textes_len
+        text = cpb_textes[text_num]
         #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
         #~ w = int(metrics.text_width)
         #~ h = int(metrics.text_height)
         #~ a = int(metrics.ascender)
-        w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx)
+        w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx, t=text_num)
         hmargin = 1
         if align_center:
             hmargin = (col_width-w) // 2
@@ -439,7 +483,10 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
 
 def cpb_img_gen_cloud (cpb_textes, ctx, img):
     # todo: not always centered
+    # multis-step does not look very good
     # How could we prevent multistep from main loop?
+    # We can force early exit by setting Capinibal.Effect_parameters.step
+    # This can lead to switching to a new effect only if effect_images is <0
     if Capinibal.verbose: print(img)
     align_center = Capinibal.Effect_parameters.align_center
     cloud_len = random.randint(6, 12) # FIXME
@@ -447,13 +494,15 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img):
         if Capinibal.Effect_parameters.step == 0:
             Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
             #~ cpb_img_gen_cloud.texts=cpb_textes
-        text = random.choice(cpb_textes)
+        text_num = random.randrange(0, len(cpb_textes))
+        text = cpb_textes[text_num]
+        #~ text = random.choice(cpb_textes)
         clone_ctx.font_size = int(random.randrange(Capinibal.min_font_size, Capinibal.max_font_size, 15))
         if Capinibal.verbose: print ("font size ", clone_ctx.font_size)
         #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
         #~ w = int(metrics.text_width)
         #~ a = int(metrics.ascender)
-        w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx)
+        w, h, a = cpb_get_cached_text_w_h_a(text, clone_ctx, t=text_num)
         if (align_center):
             x = (Capinibal.image_width-w)//2
         else:
@@ -533,47 +582,13 @@ def cpb_capinibal (pipe, frames):
     #~ cpb_get_text_metrics.max_delta_a = 0
     #~ cpb_get_text_metrics.min_delta_a = 0
     
-    # Pre-compute metrics
-    for f in range(len(Capinibal.fonts)):
-        Capinibal.ctx_num = f
-        ctx = Drawing()
-        ctx.font = './' + Capinibal.fonts[f] #FIXME !
-        ctx.font_size = Capinibal.ref_font_size
-        ctx.fill_color = Color('black')
-        # Cache metrics for each text for each font
-        row=[]
-        max_width = 0
-        max_height = 0
-        for t in range(len(Capinibal.texts)):
-            # Capinibal.text_font_ref_metrics[f][t]=
-            metrics = cpb_get_text_metrics(Capinibal.texts[t],ctx)
-            max_width = max(metrics.text_width, max_width)
-            max_height = max(metrics.text_height, max_height)
-            row.append(metrics)
-        Capinibal.text_font_ref_metrics.append(row)
-        Capinibal.max_width.append(max_width)
-        Capinibal.max_height.append(max_height)
-        ctxs.append(ctx)
-    # Max values across all fonts, all texts
-    Capinibal.max_max_width = max(Capinibal.max_width)
-    Capinibal.max_max_height = max(Capinibal.max_height)
+    cpb_fill_metrics_cache(ctxs)
     
     if Capinibal.verbose: # Show precomputed values
-        print('Reference font size:', Capinibal.ref_font_size)
-        for f in range(len(Capinibal.fonts)):
-            for t in range(len(Capinibal.texts)):
-                print('Font', f, ':', Capinibal.fonts[f], 'text', t, ':', Capinibal.texts[t],
-                    'w:', Capinibal.text_font_ref_metrics[f][t].text_width,
-                    'h:', Capinibal.text_font_ref_metrics[f][t].text_height,
-                    'a:', Capinibal.text_font_ref_metrics[f][t].ascender,
-                    #~ 'metrics:', Capinibal.text_font_ref_metrics[f][t]
-                    )
-            print('max_width:', Capinibal.max_width[f], 'max_height:', Capinibal.max_height[f])
-            print("=" * 79)
+        cpb_print_metrics_cache()
 
     ctx_count = len(ctxs)
     #~ print (ctxs, Capinibal.fonts, Capinibal.max_width, Capinibal.max_height)
-    #~ ctx2 = Drawing()
         
     cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid, cpb_img_gen_matrix_col]
     #~ cpb_funs=[cpb_img_gen_matrix_col] # Use this for testing a single effect
