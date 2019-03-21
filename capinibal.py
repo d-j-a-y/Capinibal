@@ -681,9 +681,12 @@ def cpb_capinibal (pipe, frames):
                               'scale:', scale
                             )
                     ctx.font_size = fs # Capinibal.ref_font_size * scale
-                    for i in range(1, effect_steps):
+                    if Capinibal.verbose: print('Effect steps:', effect_steps)
+                    for i in range(0, effect_steps):
+                        if Capinibal.verbose: print('effect ', cpb_fun, 'step', i)
                         cpb_funs[cpb_fun](cpb_textes, ctx, image)
                         if Capinibal.Effect_parameters.step == 0:
+                            if Capinibal.verbose: print('Early exit from effect step', i)
                             break
                     blob = image.make_blob('RGB')
                 else:
