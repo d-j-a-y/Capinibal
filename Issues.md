@@ -33,8 +33,11 @@ l’intolérance ou la répression autoritaire.
 ** positive
 *** creative commons
 - wikipedia volume & freq modification - appli qui fait les bulles
+https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Statistiques
+https://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Statistiques
 - public services / public invest
 - temporary automomous zone
+- us bank failed (weekly update on monday)- https://www.fdic.gov/bank/individual/failed/banklist.html
 ** negative
 - stock market pluvalue (no downvalue counterside : market crash could not be totaly considered has 'goodnews')
 https://www.euronext.com/pt-pt/reports-statistics/cash/daily-statistics
