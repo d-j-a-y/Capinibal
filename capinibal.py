@@ -54,6 +54,7 @@ import liblo
 cpb_clip = lambda x, l, u: l if x < l else u if x > u else x
 
 class Capinibal:
+    """Main class of the another anticapitalist images generator."""
     duration = 0
     frame = 0
     fps = 24
@@ -86,7 +87,22 @@ class Capinibal:
     vspacing = 4
     ctx_num = 0
 
-    # toss: give kind of rand rythm
+    def __init__ (self): # Todo
+        print("in init")
+
+    def cpb_toss (coin = 2):
+        """toss: give kind of rand rythm.
+        """
+                #fixme return and default
+        coin = int(coin)
+        if (coin <= 1): return True
+        if (random.randrange(1, coin) == 1):
+            return True
+        return False
+
+#######
+# COLOR UTILS
+###################
     def cpb_random_color ():
         # ~ color FFFFFF -> 16777215
         color = random.randrange(0, 16777215, 15)
@@ -109,13 +125,32 @@ class Capinibal:
         ctx.color(0, 0, 'reset')
         ctx.fill_color = old_color
 
-    def cpb_toss (coin):
-        coin = int(coin)
-        if (coin <= 1): return True
-        if (random.randrange(1, coin) == 1):
-            return True
-        return False
+#######
+# TEXTS GENERATION
+###################
+    def cpb_text_gen_solo ():
+        return random.choice(Capinibal.texts)
 
+    def cpb_text_gen_solo_alt ():
+        candidate_letter = ['P', 'B', 'T', 'N']
+        txt = "CA"
+        cddt_index = random.randrange(0, len(candidate_letter))
+        txt = txt + candidate_letter[cddt_index]
+        candidate_letter.pop(cddt_index)
+        txt = txt + "I"
+        txt = txt + candidate_letter[random.randrange(0, len(candidate_letter))]
+        txt = txt + "AL"
+        return txt
+
+    def cpb_text_gen_full (n=10):
+        txt_list = []
+        for i in range (0, n):
+            txt_list.append (Capinibal.cpb_text_gen_solo())
+        return txt_list
+
+#######
+# RYTHM CONTROL
+###################
     def cpb_setspeed(speed):
         Capinibal.speed=cpb_clip(int(1000.0*float(speed)/float(Capinibal.fps)), 1, 1000)
         if Capinibal.verbose:
@@ -131,7 +166,7 @@ class Capinibal:
         if Capinibal.verbose:
             print("Decrase speed:", float(speed), "changes/s becomes", Capinibal.speed, "changes/1000 frames")
 
-    class Effect_parameters:
+    class EffectParameters:
         cols=2
         rows=5
         ctx = None
@@ -145,9 +180,8 @@ class Capinibal:
         # ~ def get_param()
         # ~ def inc_rand_param()
         # ~ def dec_rand_param()
-
-#cpb_pattern = "CA{}I{}AL"
-#cpb_textes = ['CABINAL', 'CAPIBAL', 'CATINAL', 'CANIBAL', 'CABITAL', 'CAPITAL', 'CABIPAL', 'CATIPAL', 'CAPINAL', 'CATIBAL']
+    #END CLASS EffectParameters
+#END CLASS Capinibal
 
 #############
 #
@@ -183,26 +217,6 @@ class CpbServer(liblo.ServerThread):
     @liblo.make_method(None, None)
     def fallback(self, path, args):
         print("Warning : received unknown OSC message '%s'" % path)
-
-def cpb_text_gen_solo ():
-    return random.choice(Capinibal.texts)
-    
-def cpb_text_gen_solo_alt ():
-    candidate_letter = ['P', 'B', 'T', 'N']
-    txt = "CA"
-    cddt_index = random.randrange(0, len(candidate_letter))
-    txt = txt + candidate_letter[cddt_index]
-    candidate_letter.pop(cddt_index)
-    txt = txt + "I"
-    txt = txt + candidate_letter[random.randrange(0, len(candidate_letter))]
-    txt = txt + "AL"
-    return txt
-
-def cpb_text_gen_full (n=10):
-    txt_list = []
-    for i in range (0, n):
-        txt_list.append (cpb_text_gen_solo())
-    return txt_list
 
 def cpb_get_cached_text_w_h_a (text_to_measure, ctx, t = None, f = None):
     # Scaling cached metrics is close enough to exact metrics
@@ -299,17 +313,17 @@ def cpb_print_metrics_cache():
 def cpb_img_gen_matrix (cpb_textes, ctx, img):
     # Generate complete matrix in one step
     if Capinibal.verbose: print(img)
-    #~ bg_color = Capinibal.Effect_parameters.bg_color
-    align_center = Capinibal.Effect_parameters.align_center
-    cols=Capinibal.Effect_parameters.cols
-    rows=Capinibal.Effect_parameters.rows
+    #~ bg_color = Capinibal.EffectParameters.bg_color
+    align_center = Capinibal.EffectParameters.align_center
+    cols=Capinibal.EffectParameters.cols
+    rows=Capinibal.EffectParameters.rows
     col_width = Capinibal.image_width // cols
     row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes) # may be different from grid length
-    Capinibal.Effect_parameters.step = 0
+    Capinibal.EffectParameters.step = 0
 
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+        Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
         # Fill grid with text
         for i in range (0, cols):
             for j in range (0, rows):
@@ -335,26 +349,26 @@ def cpb_img_gen_matrix (cpb_textes, ctx, img):
 def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
     # Generate a matrix image, one row at a time
     if Capinibal.verbose: print(img)
-    #~ bg_color = Capinibal.Effect_parameters.bg_color
-    align_center = Capinibal.Effect_parameters.align_center
-    cols = Capinibal.Effect_parameters.cols
+    #~ bg_color = Capinibal.EffectParameters.bg_color
+    align_center = Capinibal.EffectParameters.align_center
+    cols = Capinibal.EffectParameters.cols
     col_width = Capinibal.image_width // cols
-    rows = Capinibal.Effect_parameters.rows
+    rows = Capinibal.EffectParameters.rows
     row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes)
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        if Capinibal.verbose: print('step ', Capinibal.Effect_parameters.step)
-        if Capinibal.Effect_parameters.step==0:
+        if Capinibal.verbose: print('step ', Capinibal.EffectParameters.step)
+        if Capinibal.EffectParameters.step==0:
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
             cpb_img_gen_matrix_line.lines_num = list(range(0, rows))
-        if Capinibal.Effect_parameters.random_order :
+        if Capinibal.EffectParameters.random_order :
             k = random.randrange(0, len(cpb_img_gen_matrix_line.lines_num))
             y = cpb_img_gen_matrix_line.lines_num[k]
             cpb_img_gen_matrix_line.lines_num.pop(k)
         else:
-            y = Capinibal.Effect_parameters.step % rows
-            if Capinibal.Effect_parameters.reverse_order:
+            y = Capinibal.EffectParameters.step % rows
+            if Capinibal.EffectParameters.reverse_order:
                 y = rows - y - 1
         
         for x in range (0, cols):
@@ -377,31 +391,31 @@ def cpb_img_gen_matrix_line (cpb_textes, ctx, img):
                 vmargin = 0
             clone_ctx.text(x*col_width + hmargin, y*row_height + vmargin + a, text)
         clone_ctx(img)
-    Capinibal.Effect_parameters.step=(Capinibal.Effect_parameters.step+1) % rows
+    Capinibal.EffectParameters.step=(Capinibal.EffectParameters.step+1) % rows
 
 def cpb_img_gen_matrix_col (cpb_textes, ctx, img):
     # Generate a matrix image, one column at a time
     if Capinibal.verbose: print(img)
-    #~ bg_color = Capinibal.Effect_parameters.bg_color
-    align_center = Capinibal.Effect_parameters.align_center
-    cols = Capinibal.Effect_parameters.cols
+    #~ bg_color = Capinibal.EffectParameters.bg_color
+    align_center = Capinibal.EffectParameters.align_center
+    cols = Capinibal.EffectParameters.cols
     col_width = Capinibal.image_width // cols
-    rows = Capinibal.Effect_parameters.rows
+    rows = Capinibal.EffectParameters.rows
     row_height = Capinibal.image_height // rows
     textes_len = len (cpb_textes)
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        if Capinibal.verbose: print('step ', Capinibal.Effect_parameters.step)
-        if Capinibal.Effect_parameters.step==0:
+        if Capinibal.verbose: print('step ', Capinibal.EffectParameters.step)
+        if Capinibal.EffectParameters.step==0:
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
             cpb_img_gen_matrix_col.cols_num = list(range(0, cols))
-        if Capinibal.Effect_parameters.random_order :
+        if Capinibal.EffectParameters.random_order :
             k = random.randrange(0, len(cpb_img_gen_matrix_col.cols_num))
             x = cpb_img_gen_matrix_col.cols_num[k]
             cpb_img_gen_matrix_col.cols_num.pop(k)
         else:
-            x = Capinibal.Effect_parameters.step % cols
-            if Capinibal.Effect_parameters.reverse_order:
+            x = Capinibal.EffectParameters.step % cols
+            if Capinibal.EffectParameters.reverse_order:
                 x = cols - x - 1
         
         for y in range (0, rows):
@@ -424,15 +438,15 @@ def cpb_img_gen_matrix_col (cpb_textes, ctx, img):
                 vmargin = 0
             clone_ctx.text(x*col_width + hmargin, y*row_height + vmargin + a, text)
         clone_ctx(img)
-    Capinibal.Effect_parameters.step=(Capinibal.Effect_parameters.step+1) % cols
+    Capinibal.EffectParameters.step=(Capinibal.EffectParameters.step+1) % cols
 
 def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
     # Generate a matrix image, one cell at a time
     # What about populating adjacent cells, worm-like? or spiral, tunnel...
     if Capinibal.verbose: print(img)
-    align_center = Capinibal.Effect_parameters.align_center
-    cols = Capinibal.Effect_parameters.cols
-    rows = Capinibal.Effect_parameters.rows
+    align_center = Capinibal.EffectParameters.align_center
+    cols = Capinibal.EffectParameters.cols
+    rows = Capinibal.EffectParameters.rows
     grid_len = rows * cols
     col_width = Capinibal.image_width // cols
     row_height = Capinibal.image_height // rows
@@ -440,24 +454,24 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
 
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
         if cpb_img_gen_matrix_grid.cells_num == []:
-            Capinibal.Effect_parameters.step = 0
-        if Capinibal.Effect_parameters.step == 0:
+            Capinibal.EffectParameters.step = 0
+        if Capinibal.EffectParameters.step == 0:
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+            Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
             # FIXME! could be visually interesting to optionally keep same context for all steps
             cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
             #~ cpb_img_gen_matrix_grid.texts=cpb_textes
             if Capinibal.verbose: print(rows, 'rows ', row_height, 'tall.')
         #~ clone_ctx.font_size = cpb_img_gen_matrix_grid.font_size
-        if Capinibal.Effect_parameters.random_order :
+        if Capinibal.EffectParameters.random_order :
             k = random.randrange(0, len(cpb_img_gen_matrix_grid.cells_num))
             i = cpb_img_gen_matrix_grid.cells_num[k]
             cpb_img_gen_matrix_grid.cells_num.pop(k)
         else:
-            i = Capinibal.Effect_parameters.step
+            i = Capinibal.EffectParameters.step
         x = i % cols
         y = i // cols
-        if Capinibal.Effect_parameters.reverse_order:
+        if Capinibal.EffectParameters.reverse_order:
             x = cols - x - 1
             y = rows - y - 1
         text_num = i % textes_len
@@ -479,20 +493,20 @@ def cpb_img_gen_matrix_grid (cpb_textes, ctx, img):
             vmargin = 0
         clone_ctx.text(x*col_width+hmargin, y*row_height+vmargin+a, text)
         clone_ctx(img)
-    Capinibal.Effect_parameters.step = (Capinibal.Effect_parameters.step + 1) % grid_len
+    Capinibal.EffectParameters.step = (Capinibal.EffectParameters.step + 1) % grid_len
 
 def cpb_img_gen_cloud (cpb_textes, ctx, img):
     # todo: not always centered
     # multis-step does not look very good
     # How could we prevent multistep from main loop?
-    # We can force early exit by setting Capinibal.Effect_parameters.step
+    # We can force early exit by setting Capinibal.EffectParameters.step
     # This can lead to switching to a new effect only if effect_images is <0
     if Capinibal.verbose: print(img)
-    align_center = Capinibal.Effect_parameters.align_center
+    align_center = Capinibal.EffectParameters.align_center
     cloud_len = random.randint(6, 12) # FIXME
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        if Capinibal.Effect_parameters.step == 0:
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+        if Capinibal.EffectParameters.step == 0:
+            Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
             #~ cpb_img_gen_cloud.texts=cpb_textes
         text_num = random.randrange(0, len(cpb_textes))
         text = cpb_textes[text_num]
@@ -513,7 +527,7 @@ def cpb_img_gen_cloud (cpb_textes, ctx, img):
         if Capinibal.verbose: print(x, y, text)
         clone_ctx.text(x, y, text)
         clone_ctx(img)
-    Capinibal.Effect_parameters.step = (Capinibal.Effect_parameters.step + 1) % cloud_len
+    Capinibal.EffectParameters.step = (Capinibal.EffectParameters.step + 1) % cloud_len
 
 # currently unused
 def cpb_seq_gen_matrix (cpb_textes, ctx, pipe):
@@ -544,10 +558,10 @@ def cpb_seq_gen_matrix (cpb_textes, ctx, pipe):
 def cpb_img_gen_solo_centered (cpb_texte, ctx, img):
     #~ metrics = cpb_get_text_metrics (cpb_texte, ctx)
     w, h, a = cpb_get_cached_text_w_h_a(cpb_texte, ctx)
-    #~ with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.Effect_parameters.bg_color) as img:
+    #~ with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.EffectParameters.bg_color) as img:
     if Capinibal.verbose: print(img)
     with Drawing(drawing=ctx) as clone_ctx:  #<= Clones & reuse the parent context.
-        Capinibal.cpb_set_bg(clone_ctx, Capinibal.Effect_parameters.bg_color)
+        Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
         x = int(img.width - w) // 2
         if x < 0: x = 0
         y = int(img.height + a) // 2
@@ -593,14 +607,6 @@ def cpb_capinibal (pipe, frames):
     cpb_funs=[cpb_img_gen_cloud, cpb_img_gen_matrix, cpb_img_gen_matrix_line, cpb_img_gen_matrix_grid, cpb_img_gen_matrix_col]
     #~ cpb_funs=[cpb_img_gen_matrix_col] # Use this for testing a single effect
     cpb_fun=0
-    
-    while False:
-        Capinibal.cpb_fill_color_gen (ctx, 3)
-        cpb_textes = cpb_text_gen_solo()
-        blob = cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctx, 5).make_blob('RGB')
-        pipe.stdin.write (blob)
-
-#        return
 
     step = 1 if frames > 0 else 0 # 0 => infinite loop
     #~ in_loop = 0 # number of matrix image
@@ -614,9 +620,16 @@ def cpb_capinibal (pipe, frames):
 
     image = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightblue'))
     image2 = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightblue'))
-    Capinibal.Effect_parameters.step = 0
+    Capinibal.EffectParameters.step = 0
     cpb_img_gen_matrix_grid.cells_num = []
-    
+
+    while False:
+        Capinibal.cpb_fill_color_gen (ctxs[0], 3)
+        cpb_textes = Capinibal.cpb_text_gen_solo()
+        cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctxs[0],image2, 5)
+        blob = image2.make_blob('RGB')
+        pipe.stdin.write (blob)
+
     try:
         # Loop over frames
         while frames>=0:
@@ -631,11 +644,11 @@ def cpb_capinibal (pipe, frames):
                 ctx = ctxs[Capinibal.ctx_num]
                 #~ Capinibal.cpb_fill_color_gen(ctx, 3) # Random color... sometimes!
                 if Capinibal.cpb_toss(3):
-                    Capinibal.Effect_parameters.fg_color = Capinibal.cpb_random_color()
-                ctx.fill_color = Capinibal.Effect_parameters.fg_color
+                    Capinibal.EffectParameters.fg_color = Capinibal.cpb_random_color()
+                ctx.fill_color = Capinibal.EffectParameters.fg_color
 
                 effect_images -= 1
-                if effect_images < 0 and Capinibal.Effect_parameters.step == 0: # Time to setup a new effect sequence!
+                if effect_images < 0 and Capinibal.EffectParameters.step == 0: # Time to setup a new effect sequence!
                     # Also test step to avoid interrupting an effect before completion
                     # FIXME interrupting might be interesting too
                     if Capinibal.verbose: print("new effect")
@@ -645,23 +658,23 @@ def cpb_capinibal (pipe, frames):
                     blinking = random.random() > 0.8
                     in_matrix = random.random() > 0.33
                     matrix_align = random.random() > 0.5
-                    Capinibal.Effect_parameters.random_order = random.random() > 0.33
-                    Capinibal.Effect_parameters.reverse_order = random.random() > 0.5
+                    Capinibal.EffectParameters.random_order = random.random() > 0.33
+                    Capinibal.EffectParameters.reverse_order = random.random() > 0.5
                     # FIXME how can we clear image from here?
                     #~ Capinibal.cpb_fill_color_gen(ctx2) # Random background color
                     #~ ctx2.color(0, 0, 'reset')
                     #~ ctx2(image)
                     # When done with ctx, will keep resetting color at each image
                     # When done inside effects, uses cloned context, works
-                    Capinibal.Effect_parameters.bg_color = Capinibal.cpb_random_color()
-                    Capinibal.Effect_parameters.fg_color = Capinibal.cpb_random_color()
-                    ctx.fill_color = Capinibal.Effect_parameters.fg_color
+                    Capinibal.EffectParameters.bg_color = Capinibal.cpb_random_color()
+                    Capinibal.EffectParameters.fg_color = Capinibal.cpb_random_color()
+                    ctx.fill_color = Capinibal.EffectParameters.fg_color
                     #~ Capinibal.cpb_fill_color_gen(ctx) # Random color
                     if Capinibal.verbose:
                         print("new sequence for", effect_images, "images, ",
                             effect_steps, "steps at a time,",
-                            "background:", Capinibal.Effect_parameters.bg_color,
-                            "foreground:", Capinibal.Effect_parameters.fg_color,
+                            "background:", Capinibal.EffectParameters.bg_color,
+                            "foreground:", Capinibal.EffectParameters.fg_color,
                             "blinking:", blinking, "in matrix:", in_matrix,".")
 
                 if in_matrix:
@@ -670,8 +683,8 @@ def cpb_capinibal (pipe, frames):
                     # i.e. at step 0
                     # They must not be changed for any other step
                     # The same image is reused so that results of previous steps are kept
-                    if Capinibal.Effect_parameters.step == 0:
-                        cpb_textes = cpb_text_gen_full()
+                    if Capinibal.EffectParameters.step == 0:
+                        cpb_textes = Capinibal.cpb_text_gen_full()
                         cpb_fun = (cpb_fun + 1) % len(cpb_funs) # Ensures each function is used
                         if Capinibal.verbose:
                             print('Selected effect:', cpb_funs[cpb_fun], ', effect image counter:', effect_images)
@@ -683,16 +696,16 @@ def cpb_capinibal (pipe, frames):
                         # context-change safe bounds
                         max_width = Capinibal.max_max_width
                         max_height = Capinibal.max_max_height
-                        Capinibal.Effect_parameters.cols = random.randrange(1, 7)
-                        col_width = Capinibal.image_width/Capinibal.Effect_parameters.cols
+                        Capinibal.EffectParameters.cols = random.randrange(1, 7)
+                        col_width = Capinibal.image_width/Capinibal.EffectParameters.cols
                         scale = col_width / (max_width + Capinibal.hspacing)
                         fs = int(Capinibal.ref_font_size * scale)
                         row_height = max_height * scale + Capinibal.vspacing
-                        Capinibal.Effect_parameters.rows = random.randrange(1, Capinibal.image_height // row_height)
+                        Capinibal.EffectParameters.rows = random.randrange(1, Capinibal.image_height // row_height)
                         if Capinibal.verbose:
                             print('Selected effect parameters:',
-                              Capinibal.Effect_parameters.rows, 'rows,',
-                              Capinibal.Effect_parameters.cols, 'columns,',
+                              Capinibal.EffectParameters.rows, 'rows,',
+                              Capinibal.EffectParameters.cols, 'columns,',
                               'scale:', scale
                             )
                     ctx.font_size = fs # Capinibal.ref_font_size * scale
@@ -700,7 +713,7 @@ def cpb_capinibal (pipe, frames):
                     for i in range(0, effect_steps):
                         if Capinibal.verbose: print('effect ', cpb_fun, 'step', i)
                         cpb_funs[cpb_fun](cpb_textes, ctx, image)
-                        if Capinibal.Effect_parameters.step == 0:
+                        if Capinibal.EffectParameters.step == 0:
                             if Capinibal.verbose: print('Early exit from effect step', i)
                             break
                     blob = image.make_blob('RGB')
@@ -708,7 +721,7 @@ def cpb_capinibal (pipe, frames):
                     # Single text
                     # A different image is used
                     # so that blinking does not erase previous matrix effect results
-                    cpb_img_gen_solo_rdn_size_centered(cpb_text_gen_solo(), ctx, image2, 5)
+                    cpb_img_gen_solo_rdn_size_centered(Capinibal.cpb_text_gen_solo(), ctx, image2, 5)
                     blob = image2.make_blob('RGB')
                 if blinking:
                     in_matrix = not in_matrix
@@ -720,7 +733,7 @@ def cpb_capinibal (pipe, frames):
                     #~ in_blink = in_blink - 1
                     #~ if in_blink > 0:
                         #~ in_loop = 0
-                        #~ Capinibal.Effect_parameters.step=0
+                        #~ Capinibal.EffectParameters.step=0
                     #~ else:
                         #~ if in_blink < -20:
                             #~ matrix_align = not matrix_align
