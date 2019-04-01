@@ -38,34 +38,50 @@ elif args.decrease is not None:
 if (args.verbose):
     print (speed, inc, dec)
 
+try:
+    target = liblo.Address(ip_address, port)
+except (liblo.AddressError, err):
+    print (str(err))
+    sys.exit()
+
+if speed is not None:
+    # send message "/cpb/speed" with float argument
+    print ("Send speed", speed)
+    liblo.send(target, "/cpb/speed", speed)
+    sys.exit()
+
 while (True):
 
-    dataframes = pd.read_html('http://bourse.latribune.fr/indices.html')
-    df1 = dataframes[2]
+    # ~ dataframes = pd.read_html('http://bourse.latribune.fr/indices.html')
+    # ~ df1 = dataframes[2]
 
-    total_var_french_stock = 0;
+    # ~ total_var_french_stock = 0;
 
-    for var in df1 ['Variation %']:
-        total_var_french_stock += float(var[:-1].replace(',', '.'))
-        print ('var', var, 'total var', total_var_french_stock)
+    # ~ for var in df1 ['Variation %']:
+        # ~ total_var_french_stock += float(var[:-1].replace(',', '.')) # 0,5% ---> 0.5
+        # ~ print ('var', var, '\ttotal var', total_var_french_stock)
 
+    # ~ if (total_var_french_stock >= 0):
+        # ~ inc = int(total_var_french_stock * 10 )
+    # ~ else :
+        # ~ dec = int(-total_var_french_stock * 10 )
+    # ~ dataframes = pd.read_html('https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Statistiques')
+    # ~ print (dataframes)
 
-    if (total_var_french_stock >= 0):
-        inc = int(total_var_french_stock * 10 )
-    else :
-        dec = int(-total_var_french_stock * 10 )
+    # ~ df1 = dataframes[2]
+
+    # ~ total_var_french_stock = 0;
+
+    # ~ for var in df1 ['Variation %']:
+        # ~ total_var_french_stock += float(var[:-1].replace(',', '.')) # 0,5% ---> 0.5
+        # ~ print ('var', var, '\ttotal var', total_var_french_stock)
+
+    # ~ if (total_var_french_stock >= 0):
+        # ~ inc = int(total_var_french_stock * 10 )
+    # ~ else :
+        # ~ dec = int(-total_var_french_stock * 10 )
 
     # send message to given port on specified host
-    try:
-        target = liblo.Address(ip_address, port)
-    except (liblo.AddressError, err):
-        print (str(err))
-        sys.exit()
-
-    # ~ if speed is not None:
-        # ~ # send message "/cpb/speed" with float argument
-        # ~ liblo.send(target, "/cpb/speed", speed)
-    # ~ el
     if inc is not None:
         # send message "/cpb/increase" with int argument
         print ("Send inc", inc)
@@ -76,7 +92,7 @@ while (True):
         liblo.send(target, "/cpb/decrease", dec)
     else:
         print ("Nothing happend !!!")
-        parser.print_help()
+        # ~ parser.print_help()
 
-    # Wait for 15 seconds
-    time.sleep(15)
+    # Wait for 45 seconds
+    time.sleep(45)
