@@ -77,6 +77,7 @@ class Capinibal:
         'Sudbury_Basin_3D.ttf',
         'Sudbury_Basin.ttf'
     ]
+    text_font_ref_metrics = []
     # The max* lists will be populated with one item per font
     max_width = []
     max_height = []
@@ -264,11 +265,16 @@ def cpb_get_cached_text_w_h_a(text_to_measure, ctx, t=None, f=None):
     # tests showed results within 2 pixels of exact size
     if t is None:
         t = Capinibal.texts.index(text_to_measure)
+        if Capinibal.verbose > 1:
+            print("text: ", text_to_measure, " #", str(t))
     if f is None:
         #~ f=Capinibal.fonts.index(ctx.font[2:])  #FIXME relies on font path
         f = Capinibal.ctx_num  # FIXME Hidden dependency
+        if Capinibal.verbose > 1:
+            print("context: ", str(f))
     #~ print(ctx.font, f, text_to_measure, t, "font size:", ctx.font_size)
     #~ print(Capinibal.text_font_ref_metrics)
+    #~ print(len(Capinibal.text_font_ref_metrics))
     try:
         m = Capinibal.text_font_ref_metrics[f][t]
     except IndexError:
@@ -278,7 +284,7 @@ def cpb_get_cached_text_w_h_a(text_to_measure, ctx, t=None, f=None):
         m = ctx.get_font_metrics(dummy_image, text_to_measure)
         #~ scale = 1.0
         return int(m.text_width), int(m.text_height), int(m.ascender)
-    scale = ctx.font_size/Capinibal.ref_font_size
+    scale = ctx.font_size / Capinibal.ref_font_size
     if Capinibal.verbose > 1:
         print('metrics cache hit at', f, t,
               'font size', ctx.font_size,
@@ -381,7 +387,6 @@ def cpb_img_gen_matrix(cpb_textes, ctx, img):
                 # What about changing colors between rows/between cells?
                 text_num = (i + cols * j) % textes_len
                 text = cpb_textes[text_num]
-                #~ text = cpb_textes[(i + cols * j) % textes_len]
                 #~ metrics = cpb_get_text_metrics (text, ctx) # FIXME should be pre-computed
                 #~ a = metrics.ascender
                 #~ w = metrics.text_width
@@ -560,7 +565,6 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
             #~ cpb_img_gen_cloud.texts=cpb_textes
         text_num = random.randrange(0, len(cpb_textes))
         text = cpb_textes[text_num]
-        #~ text = random.choice(cpb_textes)
         clone_ctx.font_size = int(random.randrange(Capinibal.min_font_size, Capinibal.max_font_size, 15))
         if Capinibal.verbose: print ("font size ", clone_ctx.font_size)
         #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
@@ -631,7 +635,8 @@ def cpb_img_gen_solo_rdn_size_centered(cpb_texte, ctx, img, coin=1):
     old_size = ctx.font_size
     if (Capinibal.cpb_toss (coin)):
         ctx.font_size = int (random.randrange(Capinibal.min_font_size, Capinibal.max_font_size, 15))
-        if(Capinibal.verbose): print ("font size ", ctx.font_size)
+        if(Capinibal.verbose):
+            print ("font size ", ctx.font_size)
     cpb_img_gen_solo_centered(cpb_texte, ctx, img)
     ctx.font_size = old_size
     #~ return img
@@ -673,6 +678,19 @@ def cpb_capinibal(pipe, frames):
     #~ Capinibal.max_max_width = max(Capinibal.max_width)
     #~ Capinibal.max_max_height = max(Capinibal.max_height)
 #~ >>>>>>> mostly cosmetic changes, get closer to flake8 standards
+        #~ for t in range(len(Capinibal.texts)):
+            #~ # Capinibal.text_font_ref_metrics[f][t]=
+            #~ metrics = cpb_get_text_metrics(Capinibal.texts[t],ctx)
+            #~ max_width = max(metrics.text_width, max_width)
+            #~ max_height = max(metrics.text_height, max_height)
+            #~ row.append(metrics)
+        #~ Capinibal.text_font_ref_metrics.append(row)
+        #~ Capinibal.max_width.append(max_width)
+        #~ Capinibal.max_height.append(max_height)
+        #~ ctxs.append(ctx)
+    # Max values across all fonts, all texts
+    #~ Capinibal.max_max_width = max(Capinibal.max_width)
+    #~ Capinibal.max_max_height = max(Capinibal.max_height)
     ctx_count = len(ctxs)
     #~ print (ctxs, Capinibal.fonts, Capinibal.max_width, Capinibal.max_height)
         
