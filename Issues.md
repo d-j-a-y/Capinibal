@@ -46,7 +46,7 @@ https://www.euronext.com/pt-pt/reports-statistics/cash/daily-statistics
 - flightradar24
 - https://fr.flightaware.com/live/cancelled/today ou https://www.flightstats.com/v2/global-cancellations-and-delays [prendre last day pour etre sur de maj?]
 - https://uk.flightaware.com/commercial/data/fuelprices - Feed samples
-
+- https://wid.world/fr/donnees/ - Le Laboratoire sur les Inégalités Mondiales
 
 --What data sources are available online?
 
