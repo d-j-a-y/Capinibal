@@ -376,7 +376,7 @@ def cpb_img_gen_matrix(cpb_textes, ctx, img):
     rows = Capinibal.EffectParameters.rows
     col_width = Capinibal.image_width // cols
     row_height = Capinibal.image_height // rows
-    textes_len = len(cpb_textes) # may be different from grid length
+    textes_len = len(cpb_textes)  # may be different from grid length
     Capinibal.EffectParameters.step = 0
     with Drawing(drawing=ctx) as clone_ctx:  # <= Clones & reuse the parent context.
         Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
