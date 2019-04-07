@@ -6,7 +6,6 @@ from wand.drawing import Drawing
 from wand.color import Color
 import wand.version
 
-
 import sys
 import random
 import subprocess
@@ -52,6 +51,12 @@ import liblo
 
 # ~ class cpb_gen_color:
     # ~ def __init__ (self):
+
+
+# see https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 
 # see https://stackoverflow.com/questions/4092528/how-to-clamp-an-integer-to-some-range
 # cpb_clip = lambda x, l, u: l if x < l else u if x > u else x
@@ -236,7 +241,7 @@ class CpbServer(liblo.ServerThread):
 
     @liblo.make_method(None, None)
     def fallback(self, path, args):
-        print("Warning : received unknown OSC message '%s'" % path)
+        eprint("Warning : received unknown OSC message '%s'" % path)
 
 
 def cpb_text_gen_solo():
@@ -440,11 +445,11 @@ def cpb_img_gen_matrix_line(cpb_textes, ctx, img):
             if align_center:
                 hmargin = (col_width - w) // 2
             if hmargin < 0:
-                print('Alignment problem:', text, 'width:', w)
+                eprint('Alignment problem:', text, 'width:', w)
                 hmargin = 0
             vmargin = (row_height - h) // 2
             if vmargin < 0:
-                print('Alignment problem:', text,
+                eprint('Alignment problem:', text,
                       'y:', y,
                       'row height:', row_height,
                       'rows:', rows,
@@ -490,11 +495,11 @@ def cpb_img_gen_matrix_col(cpb_textes, ctx, img):
             if align_center:
                 hmargin = (col_width - w) // 2
             if hmargin < 0:
-                print('Alignment problem:', text, 'width:', w)
+                eprint('Alignment problem:', text, 'width:', w)
                 hmargin = 0
             vmargin = (row_height - h) // 2
             if vmargin < 0:
-                print('Alignment problem:', text,
+                eprint('Alignment problem:', text,
                       'y:', y,
                       'row height:', row_height,
                       'rows:', rows,
@@ -550,11 +555,11 @@ def cpb_img_gen_matrix_grid(cpb_textes, ctx, img):
         if align_center:
             hmargin = (col_width - w) // 2
         if hmargin < 0:
-            print('Alignment problem:', text, 'width:', w)
+            eprint('Alignment problem:', text, 'width:', w)
             hmargin = 0
         vmargin = (row_height - h) // 2
         if vmargin < 0:
-            print('Alignment problem:', text, 'ascender:', a)
+            eprint('Alignment problem:', text, 'ascender:', a)
             vmargin = 0
         clone_ctx.text(x * col_width + hmargin,
                        y * row_height + vmargin + a,
@@ -873,10 +878,10 @@ def cpb_capinibal(pipe, frames):
 
         print("All frames generated")
     except KeyboardInterrupt:  # Use this instead of signal.SIGINT
-        print("Interrupted, exiting!")
+        eprint("Interrupted, exiting!")
 #        except SystemExit as e:
     except BrokenPipeError:
-        print("Pipe broken, exiting!")
+        eprint("Pipe broken, exiting!")
     return
 
 
@@ -915,7 +920,7 @@ if __name__ == "__main__":
     if status == 1:
         encoder = 'ffmpeg'
     if encoder is None:
-        print("Missing dependency: You need to install ffmpeg or avconv.")
+        eprint("Missing dependency: You need to install ffmpeg or avconv.")
         exit()
 
     if Capinibal.verbose:
@@ -942,7 +947,7 @@ if __name__ == "__main__":
     try:
         server = CpbServer()
     except (liblo.ServerError):
-        print("OSC failure!")
+        eprint("OSC failure!")
         sys.exit()
 
     if outputfile is None:
@@ -958,13 +963,13 @@ if __name__ == "__main__":
         try:
             os.mkfifo(filename)
         except OSError as e:
-            print("Failed to create FIFO: %s" % e, file=sys.stderr)
+            eprint("Failed to create FIFO: %s" % e, file=sys.stderr)
             quit()
 
         try:
             fifo = open(filename, 'w')
         except KeyboardInterrupt:  # Use this instead of signal.SIGINT
-            print("Interrupted, exiting!")
+            eprint("Interrupted, exiting!")
             sys.exit()
 
         cmdstring = [encoder,
@@ -985,7 +990,7 @@ if __name__ == "__main__":
         print("The output file is:\n%s" % outputfile, file=sys.stderr)
         # No infinite duration!
         if Capinibal.frames < 1:
-            print("Non-zero duration required when using -o, aborting.", file=sys.stderr)
+            eprint("Non-zero duration required when using -o, aborting.", file=sys.stderr)
             sys.exit()
         cmdstring = [encoder,
                      '-y',  # (optional) overwrite output file if it exists
@@ -1011,7 +1016,7 @@ if __name__ == "__main__":
     cpb_capinibal(pipe, Capinibal.frames)
 
     if outputfile is None:
-        print("Cleaning pipe stuff...", file=sys.stderr)
+        print("Cleaning pipe stuff...")
         fifo.close()
         os.remove(filename)
         if tmpdir:
