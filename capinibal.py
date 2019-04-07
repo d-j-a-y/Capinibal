@@ -267,12 +267,12 @@ def cpb_get_cached_text_w_h_a(text_to_measure, ctx, t=None, f=None):
     # tests showed results within 2 pixels of exact size
     if t is None:
         t = Capinibal.texts.index(text_to_measure)
-        if Capinibal.verbose > 1:
+        if Capinibal.verbose:
             print("text: ", text_to_measure, " #", str(t))
     if f is None:
         #~ f=Capinibal.fonts.index(ctx.font[2:])  #FIXME relies on font path
         f = Capinibal.ctx_num  # FIXME Hidden dependency
-        if Capinibal.verbose > 1:
+        if Capinibal.verbose:
             print("context: ", str(f))
     #~ print(ctx.font, f, text_to_measure, t, "font size:", ctx.font_size)
     #~ print(Capinibal.text_font_ref_metrics)
@@ -287,7 +287,7 @@ def cpb_get_cached_text_w_h_a(text_to_measure, ctx, t=None, f=None):
         #~ scale = 1.0
         return int(m.text_width), int(m.text_height), int(m.ascender)
     scale = ctx.font_size / Capinibal.ref_font_size
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print('metrics cache hit at', f, t,
               'font size', ctx.font_size,
               'scale:', round(scale, 3))
@@ -370,7 +370,7 @@ def cpb_print_metrics_cache():
 ############################
 def cpb_img_gen_matrix(cpb_textes, ctx, img):
     # Generate complete matrix in one step
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     #~ bg_color = Capinibal.Effect_parameters.bg_color
     align_center = Capinibal.EffectParameters.align_center
@@ -408,7 +408,7 @@ def cpb_img_gen_matrix(cpb_textes, ctx, img):
 # FIXME The following 3 functions have much in common, should be factored out
 def cpb_img_gen_matrix_line(cpb_textes, ctx, img):
     # Generate a matrix image, one row at a time
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     #~ bg_color = Capinibal.Effect_parameters.bg_color
     align_center = Capinibal.EffectParameters.align_center
@@ -458,7 +458,7 @@ def cpb_img_gen_matrix_line(cpb_textes, ctx, img):
 
 def cpb_img_gen_matrix_col(cpb_textes, ctx, img):
     # Generate a matrix image, one column at a time
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     #~ bg_color = Capinibal.EffectParameters.bg_color
     align_center = Capinibal.EffectParameters.align_center
@@ -509,7 +509,7 @@ def cpb_img_gen_matrix_col(cpb_textes, ctx, img):
 def cpb_img_gen_matrix_grid(cpb_textes, ctx, img):
     # Generate a matrix image, one cell at a time
     # What about populating adjacent cells, worm-like?
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     align_center = Capinibal.EffectParameters.align_center
     cols = Capinibal.EffectParameters.cols
@@ -569,7 +569,7 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
     # How could we prevent multistep from main loop?
     # We can force early exit by setting Capinibal.EffectParameters.step
     # This can lead to switching to a new effect only if effect_images is <0
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     #~ bg_color = Capinibal.Effect_parameters.bg_color
     align_center = Capinibal.EffectParameters.align_center
@@ -581,7 +581,7 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
         text_num = random.randrange(0, len(cpb_textes))
         text = cpb_textes[text_num]
         clone_ctx.font_size = int(random.randrange(Capinibal.min_font_size, Capinibal.max_font_size, 15))
-        if Capinibal.verbose > 1:
+        if Capinibal.verbose:
             print("font size ", clone_ctx.font_size)
         #~ metrics = cpb_get_text_metrics (text, clone_ctx) # text size
         #~ w = int(metrics.text_width)
@@ -598,7 +598,7 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
         y = int(random.gauss((Capinibal.image_height - a) // 2,
                              (Capinibal.image_height - a) // 6))
         y = cpb_clip(y, 0, Capinibal.image_height - a) + a
-        if Capinibal.verbose > 1:
+        if Capinibal.verbose:
             print("Cloud:", text, "at", x, y, )
         clone_ctx.text(x, y, text)
         clone_ctx(img)
@@ -636,7 +636,7 @@ def cpb_img_gen_solo_centered(cpb_texte, ctx, img):
     #~ metrics = cpb_get_text_metrics (cpb_texte, ctx)
     w, h, a = cpb_get_cached_text_w_h_a(cpb_texte, ctx)
     #~ with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.EffectParameters.bg_color) as img:
-    if Capinibal.verbose > 1:
+    if Capinibal.verbose:
         print(img)
     with Drawing(drawing=ctx) as clone_ctx:  # <= Clones & reuse the parent context.
         Capinibal.cpb_set_bg(clone_ctx, Capinibal.EffectParameters.bg_color)
@@ -681,7 +681,7 @@ def cpb_capinibal(pipe, frames):
 
     cpb_fill_metrics_cache(ctxs)
 
-    if Capinibal.verbose > 1:  # Show precomputed values
+    if Capinibal.verbose:  # Show precomputed values
         cpb_print_metrics_cache()
 
 #~ =======
@@ -759,7 +759,7 @@ def cpb_capinibal(pipe, frames):
             #~ if Capinibal.verbose:
                 #~ print ("frames:", frames, " in_loop:", in_loop, "blinking:", blinking, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase)
             if phase >= 1000:  # Time to generate a new image!
-                if Capinibal.verbose > 1:
+                if Capinibal.verbose:
                     print("new image")
                 phase = phase % 1000
                 Capinibal.ctx_num = random.randrange(0, ctx_count)  # Random context means random font
@@ -839,11 +839,11 @@ def cpb_capinibal(pipe, frames):
                     if Capinibal.verbose:
                         print('Effect steps:', effect_steps)
                     for i in range(0, effect_steps):
-                        if Capinibal.verbose > 1:
+                        if Capinibal.verbose:
                             print('Effect ', cpb_fun, 'step', i)
                         cpb_funs[cpb_fun](cpb_textes, ctx, image)
                         if Capinibal.EffectParameters.step == 0:
-                            if Capinibal.verbose > 1:
+                            if Capinibal.verbose:
                                 print('Effect complete, exiting at step', i)
                             break
                     blob = image.make_blob('RGB')
