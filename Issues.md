@@ -1,6 +1,7 @@
 # TODO list
 
 ## FIXME
+* Dissociate bg and text image, to add bg fade everywhere!, then fusion at diffusion
 * PIPE FULL bug ?
 * Sometime; Pipe not close on ctrl-c
 

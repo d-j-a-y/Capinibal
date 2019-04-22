@@ -120,6 +120,15 @@ class Capinibal:
             return True
         return False
 
+    def cpb_toss_by_value(val_max=2, val_min = 1):
+        """toss: give kind of rand rythm value between given min and max.
+        """
+        # fixme return and default above
+        val_max = int(val_max)
+        if (val_max <= 1):
+            return 1
+        return random.randrange(val_min, val_max)
+
 #######
 # COLOR UTILS
 ###################
@@ -129,12 +138,34 @@ class Capinibal:
         red = color >> 16
         green = (color >> 8) & 0xFF
         blue = color & 0xFF
-        #~ print ("color 0x%x, r 0x%x, g 0x%x, b 0x%x" % (color, red, green, blue))
         return Color('rgb({0},{1},{2})'.format(red, green, blue))
 
     def cpb_fill_color_gen(ctx, coin=1):
         if Capinibal.cpb_toss(coin):
             ctx.fill_color = Capinibal.cpb_random_color()
+
+    def cpb_get_bg_start(step_min, step_max, static_color=False):
+        Capinibal.FxParams.bg_color_steps = Capinibal.cpb_toss_by_value(step_max,step_min)
+        if not static_color:
+          Capinibal.FxParams.bg_color_begin = Capinibal.FxParams.bg_color_end
+          Capinibal.FxParams.bg_color_end = Capinibal.cpb_random_color()
+          Capinibal.FxParams.bg_color_stepr = (Capinibal.FxParams.bg_color_end.red_int8 - Capinibal.FxParams.bg_color_begin.red_int8) // Capinibal.FxParams.bg_color_steps
+          Capinibal.FxParams.bg_color_stepg = (Capinibal.FxParams.bg_color_end.green_int8 - Capinibal.FxParams.bg_color_begin.green_int8) // Capinibal.FxParams.bg_color_steps
+          Capinibal.FxParams.bg_color_stepb = (Capinibal.FxParams.bg_color_end.blue_int8 - Capinibal.FxParams.bg_color_begin.blue_int8) // Capinibal.FxParams.bg_color_steps
+
+    def cpb_get_bg_next():
+        if Capinibal.FxParams.bg_color_steps is None:
+            return False, None
+        Capinibal.FxParams.bg_color_steps -= 1
+        if Capinibal.FxParams.bg_color_steps == 0:
+            bg_next = Capinibal.FxParams.bg_color_end
+            Capinibal.FxParams.bg_color_steps = None
+        else:
+            red = Capinibal.FxParams.bg_color.red_int8 + Capinibal.FxParams.bg_color_stepr
+            green = Capinibal.FxParams.bg_color.green_int8 + Capinibal.FxParams.bg_color_stepg
+            blue = Capinibal.FxParams.bg_color.blue_int8 + Capinibal.FxParams.bg_color_stepb
+            bg_next = Color('rgb({0},{1},{2})'.format(red, green, blue))
+        return True, bg_next
 
     def cpb_set_bg(ctx, bg_color):
         #~ clone_ctx.composite('clear', 0, 0, image_width, image_height, img) # set to black!
@@ -209,6 +240,12 @@ class Capinibal:
         halign_center = False
         # What about align_bottom?
         bg_color = Color('lightblue')
+        bg_color_end = bg_color
+        bg_color_begin = bg_color
+        bg_color_steps = None
+        bg_color_stepr = 0
+        bg_color_stepg = 0
+        bg_color_stepb = 0
         fg_color = Color('black')
         step = 0
         random_order = True
@@ -851,13 +888,22 @@ def cpb_capinibal(pipe, frames):
         blob = image2.make_blob('RGB')
         pipe.stdin.write(blob)
 
+    bg_next_valid = False
     try:
         # Loop over frames
         while frames >= 0:
             frames -= step
-            phase += Capinibal.FxParams.speed
+
+            if not bg_next_valid:
+                Capinibal.cpb_get_bg_start(10,550, Capinibal.cpb_toss(25))
+            bg_next_valid, bg_next = Capinibal.cpb_get_bg_next()
+            if bg_next_valid:
+                Capinibal.FxParams.bg_color = bg_next
+
             #~ if Capinibal.verbose:
                 #~ print ("frames:", frames, " in_loop:", in_loop, "blinking:", blinking, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase)
+
+            phase += Capinibal.FxParams.speed
             if phase >= 1000:  # Time to generate a new image!
                 if Capinibal.verbose:
                     print("New image, clearing:", clearing,
@@ -898,7 +944,8 @@ def cpb_capinibal(pipe, frames):
                     #~ ctx2(image)
                     # When done with ctx, will keep resetting color at each image
                     # When done inside effects, uses cloned context, works
-                    Capinibal.FxParams.bg_color = Capinibal.cpb_random_color()
+
+                    # ~ Capinibal.FxParams.bg_color = Capinibal.cpb_random_color() # done by get_bg_next 
                     Capinibal.FxParams.fg_color = Capinibal.cpb_random_color()
                     ctx.fill_color = Capinibal.FxParams.fg_color
                     #~ Capinibal.cpb_fill_color_gen(ctx) # Random color
@@ -1063,6 +1110,7 @@ if __name__ == "__main__":
     if Capinibal.verbose:
         sorted_by_key = sorted(args.items(), key=lambda x: x[0])
         print('Arguments:\n', sorted_by_key, '\n')
+        print('Verbose level:', Capinibal.verbose)
 
     Capinibal.fps = args['fps']
     Capinibal.duration = args['duration']
@@ -1082,13 +1130,9 @@ if __name__ == "__main__":
 
     if Capinibal.verbose:
         print('Encoder selected:', encoder)
-        print('verbose level:', Capinibal.verbose)
+        print('Wand version:', wand.version.VERSION)
 
     Capinibal.cpb_setspeed(args['speed_of_change'])
-
-    random.seed()
-
-    print('wand version:', wand.version.VERSION)
 
     if Capinibal.duration:
         print('Generating', Capinibal.frames,
@@ -1103,9 +1147,11 @@ if __name__ == "__main__":
 
     try:
         server = CpbServer()
-    except (liblo.ServerError):
-        eprint("OSC failure!")
-        sys.exit()
+    except (liblo.ServerError,err):
+        eprint("OSC failure! can't start the server.", str(err))
+        sys.exit(1)
+
+    random.seed()
 
     if outputfile is None:
         # No output file, use a pipe
