@@ -1,10 +1,18 @@
 # TODO list
 
-* how import lib after args parsing (if missing depency lib --help doesn't work)
+## FIXME
+* PIPE FULL bug ?
+* Sometime; Pipe not close on ctrl-c
 
-* random over text decoration
-  pl = Drawing()
+## GFX
+* add a function (wand api?) to print fixed chase text (metrix for max letter width and hop)
+
+* random over text decoration  
+  pl = Drawing()  
   print(len(pl.TEXT_DECORATION_TYPES)) //random over deco
+
+## MINOR
+* how import lib after args parsing (if missing depency lib --help doesn't work)
 
 * debug mode over all functions
 
@@ -19,7 +27,9 @@ x, y , align, ...
 
 * Take a look to python-img-generator loop
 
-* Generator data sources
+
+
+# Generator data sources
 « cinq grands maux » / Five giants: pauvreté, insalubrité, maladie, ignorance, chomage.  William Beveridge (19e-20e)
 Want (misère), Disease, Ignorance, Squalor (condition misérable) and Idleness
 ++++ ~pollution, liberté
@@ -51,4 +61,5 @@ https://www.euronext.com/pt-pt/reports-statistics/cash/daily-statistics
 --What data sources are available online?
 
 # Issues
-* Pipe not close on ctrl-c
+* Sometime; Pipe not close on `ctrl-c`
+* Froze after some long time - (pipe full bug?) - mpv 0.6.2-2 / debian 8
