@@ -1,16 +1,20 @@
 # TODO list
 
-## FIXME
-* Dissociate bg and text image, to add bg fade everywhere!, then fusion at diffusion
-* PIPE FULL bug ?
-* Sometime; Pipe not close on ctrl-c
-
-## GFX
-* add a function (wand api?) to print fixed chase text (metrix for max letter width and hop)
-
-* random over text decoration  
+## TODO
+* [GFX] Dissociate bg and text image, to add bg fade everywhere!, then fusion at diffusion (KEEPING PAVING OPTION!)
+* [GFX] add a function (wand api?) to print fixed chase text (metrix for max letter width and hop)
+* [GFX] random over text decoration  
   pl = Drawing()  
   print(len(pl.TEXT_DECORATION_TYPES)) //random over deco
+* [GFX] fg color transition has bg color
+* [GFX] add transparent has bg color option !!! (when often transparent give a mess!)
+* [GFX] matrix text : populating adjacent cells, worm-like?
+
+
+## FIXME
+* PIPE FULL bug ?
+* Sometime; Pipe not close on ctrl-c
+* clear text function : v and h limits problem, a right line is never cleared and some up also
 
 ## MINOR
 * how import lib after args parsing (if missing depency lib --help doesn't work)
@@ -28,6 +32,7 @@ x, y , align, ...
 
 * Take a look to python-img-generator loop
 
+* check if ctx2 = Drawing() better than with Drawing(drawing=ctx) as clone_ctx:  
 
 
 # Generator data sources

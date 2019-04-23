@@ -481,10 +481,16 @@ def cpb_clr_text(cpb_textes, ctx, col, row, cols, rows, col_width, row_height):
     if Capinibal.FxParams.reverse_rows:
         row = rows - row - 1
     ctx.stroke_width = 0
+
+    # TODO get_clear_color
+    # FIXME how to clear !!!!
+    ctx.fill_color = Capinibal.FxParams.bg_color #Color('reset') # ctx.fill_color
+
     ctx.rectangle(left=col * col_width,
                   top=row * row_height,
                   width=col_width,
                   height=row_height)
+#    ctx.color(0,0,'reset')
 
 def cpb_img_gen_matrix_full(cpb_textes, ctx, img):
     # Generate complete matrix in one step
@@ -498,6 +504,7 @@ def cpb_img_gen_matrix_full(cpb_textes, ctx, img):
     Capinibal.FxParams.step = 0
     with Drawing(drawing=ctx) as clone_ctx:  # <= Clones & reuse the parent context.
         Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color)
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         # Fill grid with text
         for col in range(0, cols):
             for row in range(0, rows):
@@ -527,6 +534,7 @@ def cpb_img_gen_matrix_line(cpb_textes, ctx, img):
             cpb_img_gen_matrix_line.lines_num.pop(k)
         else:
             row = Capinibal.FxParams.step % rows
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         for col in range(0, cols):
             cpb_put_text(cpb_textes, clone_ctx, col, row, cols, rows, col_width, row_height)
         clone_ctx(img)
@@ -554,6 +562,7 @@ def cpb_img_gen_matrix_col(cpb_textes, ctx, img):
             cpb_img_gen_matrix_col.cols_num.pop(k)
         else:
             col = Capinibal.FxParams.step % cols
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         for row in range(0, rows):
             cpb_put_text(cpb_textes, clone_ctx, col, row, cols, rows, col_width, row_height)
         clone_ctx(img)
@@ -575,6 +584,7 @@ def cpb_img_gen_matrix_diag(cpb_textes, ctx, img):
             Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color)
         col_from = max(0, Capinibal.FxParams.step - rows + 1)
         col_to = min(cols, Capinibal.FxParams.step + 1)
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         for col in range(col_from, col_to):
             # col + row is constant for one oblique line
             row = Capinibal.FxParams.step - col
@@ -600,7 +610,7 @@ def cpb_img_gen_matrix_grid(cpb_textes, ctx, img):
             Capinibal.FxParams.step = 0
         if Capinibal.FxParams.step == 0:
             # FIXME! also keep the version without clearing, leading to a visually interesting accumulation
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color)
+            # ~ Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color) # before trans
             # FIXME! could be visually interesting to optionally keep same context for all steps
             cpb_img_gen_matrix_grid.cells_num = list(range(0, grid_len))
             if Capinibal.verbose:
@@ -613,6 +623,7 @@ def cpb_img_gen_matrix_grid(cpb_textes, ctx, img):
             i = Capinibal.FxParams.step
         col = i % cols
         row = i // cols
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         cpb_put_text(cpb_textes, clone_ctx, col, row, cols, rows, col_width, row_height)
         clone_ctx(img)
     Capinibal.FxParams.step = (Capinibal.FxParams.step + 1) % grid_len
@@ -712,7 +723,7 @@ def cpb_img_clr_matrix_grid(cpb_textes, ctx, img):
     col = i % cols
     row = i // cols
     ctx2 = Drawing()
-    ctx2.fill_color = Capinibal.FxParams.bg_color # ctx.fill_color
+    # ~ ctx2.fill_color = Capinibal.FxParams.bg_color # before trans ctx.fill_color
     cpb_clr_text(cpb_textes, ctx2, col, row, cols, rows, col_width, row_height)
     ctx2(img)
     Capinibal.FxParams.step = (Capinibal.FxParams.step + 1) % grid_len
@@ -729,8 +740,8 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
         print(img)
     cloud_len = random.randint(6, 12)  # FIXME
     with Drawing(drawing=ctx) as clone_ctx:  # <= Clones & reuse the parent context.
-        if Capinibal.FxParams.step == 0:
-            Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color)
+        # ~ if Capinibal.FxParams.step == 0: before trans
+            # ~ Capinibal.cpb_set_bg(clone_ctx, Capinibal.FxParams.bg_color)
         text_num = random.randrange(0, len(cpb_textes))
         text = cpb_textes[text_num]
         clone_ctx.font_size = int(random.randrange(Capinibal.min_font_size, Capinibal.max_font_size, 15))
@@ -757,6 +768,7 @@ def cpb_img_gen_cloud(cpb_textes, ctx, img):
         y = cpb_clip(y, 0, Capinibal.image_height - a) + a
         if Capinibal.verbose > 1:
             print("Cloud:", text, "at", x, y, )
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         clone_ctx.text(x, y, text)
         clone_ctx(img)
     Capinibal.FxParams.step = (Capinibal.FxParams.step + 1) % cloud_len
@@ -785,6 +797,7 @@ def cpb_seq_gen_matrix(cpb_textes, ctx, pipe):
                 x = coord % 4
             print(coord, ':  ', x, ' - ', y)
             cddt_text = random.randrange(0, textes_len)
+            clone_ctx.fill_color = Capinibal.FxParams.fg_color
             clone_ctx.text(x * quarter_width, (1 + y) * deci_height, cpb_textes[cddt_text])
             clone_ctx(img)
             pipe.stdin.write(img.make_blob('RGB'))
@@ -802,6 +815,7 @@ def cpb_img_gen_solo_centered(cpb_texte, ctx, img):
         y = int(img.height + a) // 2
         if y < 0:
             y = 0
+        clone_ctx.fill_color = Capinibal.FxParams.fg_color
         clone_ctx.text(x, y, cpb_texte)
         clone_ctx(img)
 
@@ -874,8 +888,9 @@ def cpb_capinibal(pipe, frames):
     # Use two images so that we can use one for matrices/cloud
     # and one for single text; this allows switching quickly
     # between these two effects
-    image = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightblue'))
-    image2 = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('lightblue'))
+    image_combi = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('transparent'))
+    image_combi_bg = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.FxParams.bg_color)
+    image_solo = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('transparent'))
 
     Capinibal.FxParams.step = 0
     cpb_img_gen_matrix_grid.cells_num = []
@@ -884,8 +899,8 @@ def cpb_capinibal(pipe, frames):
     while False:
         Capinibal.cpb_fill_color_gen(ctxs[0], 3)
         cpb_textes = Capinibal.cpb_text_gen_solo()
-        cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctxs[0], image2, 5)
-        blob = image2.make_blob('RGB')
+        cpb_img_gen_solo_rdn_size_centered(cpb_textes, ctxs[0], image_solo, 5)
+        blob = image_solo.make_blob('RGB')
         pipe.stdin.write(blob)
 
     bg_next_valid = False
@@ -893,12 +908,6 @@ def cpb_capinibal(pipe, frames):
         # Loop over frames
         while frames >= 0:
             frames -= step
-
-            if not bg_next_valid:
-                Capinibal.cpb_get_bg_start(10,550, Capinibal.cpb_toss(25))
-            bg_next_valid, bg_next = Capinibal.cpb_get_bg_next()
-            if bg_next_valid:
-                Capinibal.FxParams.bg_color = bg_next
 
             #~ if Capinibal.verbose:
                 #~ print ("frames:", frames, " in_loop:", in_loop, "blinking:", blinking, " in_matrix:", in_matrix, " matrix_align:", matrix_align, " phase:", phase)
@@ -909,14 +918,26 @@ def cpb_capinibal(pipe, frames):
                     print("New image, clearing:", clearing,
                           "step:", Capinibal.FxParams.step)
                 phase = phase % 1000
+
+                # Pickup new bg color
+                if not bg_next_valid:
+                    Capinibal.cpb_get_bg_start(10,550, Capinibal.cpb_toss(25))
+                if not clearing: #FIXME bg fade is suspend time to solve clear rectangle issue (but will be optionnal!!!)
+                    bg_next_valid, bg_next = Capinibal.cpb_get_bg_next()
+                if bg_next_valid:
+                    Capinibal.FxParams.bg_color = bg_next
+
                 Capinibal.ctx_num = random.randrange(0, ctx_count)  # Random context means random font
                 ctx = ctxs[Capinibal.ctx_num]
                 #~ Capinibal.cpb_fill_color_gen(ctx, 3)  # Random color... sometimes!
+
+                # FIXME (duplicate ?) Pickup new fg color ,
+                # TODO fade color fg
                 if Capinibal.cpb_toss(3):
                     Capinibal.FxParams.fg_color = Capinibal.cpb_random_color()
                 ctx.fill_color = Capinibal.FxParams.fg_color
 
-                effect_images -= 1
+                effect_images -= 1 #FIXME test over effect_images<0 always true!
                 if effect_images < 0 and Capinibal.FxParams.step == 0 and not clearing:
                     # Time to setup a new effect sequence!
                     # Also test step to avoid interrupting an effect
@@ -945,10 +966,8 @@ def cpb_capinibal(pipe, frames):
                     # When done with ctx, will keep resetting color at each image
                     # When done inside effects, uses cloned context, works
 
-                    # ~ Capinibal.FxParams.bg_color = Capinibal.cpb_random_color() # done by get_bg_next 
                     Capinibal.FxParams.fg_color = Capinibal.cpb_random_color()
-                    ctx.fill_color = Capinibal.FxParams.fg_color
-                    #~ Capinibal.cpb_fill_color_gen(ctx) # Random color
+                    ctx.fill_color = Capinibal.FxParams.fg_color #FIXME could be removed
                     if Capinibal.verbose:
                         print("New sequence for", effect_images, "images, ",
                               effect_steps, "steps at a time,",
@@ -997,6 +1016,11 @@ def cpb_capinibal(pipe, frames):
                         if effect_steps > Capinibal.FxParams.cols:
                             effect_steps = Capinibal.FxParams.cols
                         Capinibal.FxParams.rows = random.randint(1, Capinibal.image_height // row_height)
+
+                        # TODO if Capinibal.FxParams.combi_cumulate
+                        image_combi.clear()
+                        image_combi = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Color('transparent'))
+
                         if Capinibal.verbose:
                             print('Selected effect parameters:',
                                   Capinibal.FxParams.rows, 'rows,',
@@ -1018,7 +1042,7 @@ def cpb_capinibal(pipe, frames):
                                       Capinibal.FxParams.cols, 'column(s),',
                                       'step', Capinibal.FxParams.step)
                             ctx.fill_color = Capinibal.FxParams.bg_color
-                            cpb_clr_funs[cpb_clr_fun](cpb_textes, ctx, image)
+                            cpb_clr_funs[cpb_clr_fun](cpb_textes, ctx, image_combi)
                             clear_enable = False
                         else:  # Generating text display
                             if Capinibal.verbose > 1:
@@ -1028,7 +1052,7 @@ def cpb_capinibal(pipe, frames):
                                       Capinibal.FxParams.cols, 'column(s),',
                                       'step', Capinibal.FxParams.step)
                             ctx.fill_color = Capinibal.FxParams.fg_color
-                            clear_enable = cpb_gen_funs[cpb_gen_fun](cpb_textes, ctx, image)
+                            clear_enable = cpb_gen_funs[cpb_gen_fun](cpb_textes, ctx, image_combi)
 
                         if Capinibal.FxParams.step == 0:
                             # Effect just completed (gen or clr)
@@ -1041,13 +1065,34 @@ def cpb_capinibal(pipe, frames):
                                 if Capinibal.verbose:
                                     print("Clearing:", clearing)
                             break
-                    blob = image.make_blob('RGB')
+
+                    if False:#before transparent
+                        blob = image_combi.make_blob('RGB')
+                    else:
+                        #if not solo_blend (various blend method?)
+                        image_combi_bg.clear()
+                        image_combi_bg = Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.FxParams.bg_color)
+                        with Drawing(drawing=ctx) as ctx_clone:  #<= Clones & reuse the parent context.
+                            ctx_clone.composite(operator='over', left=0, top=0,
+                                      width=image_combi.width, height=image_combi.height, image=image_combi)
+                            ctx_clone(image_combi_bg)
+                        blob = image_combi_bg.make_blob('RGB')
                 else:
                     # Single text
                     # A different image is used
                     # so that blinking does not erase previous matrix effect results
-                    cpb_img_gen_solo_rdn_size_centered(Capinibal.cpb_text_gen_solo(), ctx, image2, 5)
-                    blob = image2.make_blob('RGB')
+                    cpb_img_gen_solo_rdn_size_centered(Capinibal.cpb_text_gen_solo(), ctx, image_solo, 5)
+                    if False:#before transparent
+                        blob = image_solo.make_blob('RGB')
+                    else:
+                        with Drawing(drawing=ctx) as ctx_clone:  #<= Clones & reuse the parent context.
+                            ctx_clone.composite(operator='over', left=0, top=0,
+                                      width=image_solo.width, height=image_solo.height, image=image_solo)
+                            with Image(width=Capinibal.image_width, height=Capinibal.image_height, background=Capinibal.FxParams.bg_color) as compo_solo:
+                                ctx_clone(compo_solo)
+                                blob = compo_solo.make_blob('RGB')
+
+
                 if blinking:
                     in_matrix = not in_matrix
 
